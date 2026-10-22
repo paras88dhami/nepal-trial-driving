@@ -1,15 +1,25 @@
 {
   "name": "NepalTrial.EditModeTests",
   "rootNamespace": "NepalTrial.Tests.EditMode",
-  "references": [],
-  "includePlatforms": ["Editor"],
+  "references": [
+    "NepalTrial.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
   "overrideReferences": true,
-  "precompiledReferences": ["nunit.framework.dll"],
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
   "autoReferenced": false,
-  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
   "versionDefines": [],
   "noEngineReferences": false,
-  "optionalUnityReferences": ["TestAssemblies"]
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
 }
