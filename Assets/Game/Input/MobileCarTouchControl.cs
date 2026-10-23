@@ -4,31 +4,44 @@ using UnityEngine.EventSystems;
 
 namespace NepalTrial.Mobile
 {
-    /// <summary>Attach to a UI EventTrigger-compatible button and configure Control.</summary>
+    /// <summary>Finger-aware press/release; multiple buttons can remain held simultaneously.</summary>
     public sealed class MobileCarTouchControl : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
     {
         public enum Control { SteerLeft, SteerRight, Throttle, Brake, Handbrake }
         [SerializeField] private PrototypeCarInput target;
         [SerializeField] private Control control;
+        private int pointerId = int.MinValue;
 
-        public void OnPointerDown(PointerEventData eventData) => SetActive(true);
-        public void OnPointerUp(PointerEventData eventData) => SetActive(false);
-        public void OnPointerExit(PointerEventData eventData) => SetActive(false);
-
-        private void OnDisable() => SetActive(false);
-
-        private void SetActive(bool active)
+        public void OnPointerDown(PointerEventData eventData)
         {
-            if (target == null) return;
-            float axis = active ? 1f : 0f;
-            switch (control)
-            {
-                case Control.SteerLeft: target.SetSteering(-axis); break;
-                case Control.SteerRight: target.SetSteering(axis); break;
-                case Control.Throttle: target.SetThrottle(axis); break;
-                case Control.Brake: target.SetBrake(axis); break;
-                case Control.Handbrake: target.SetHandbrake(active); break;
-            }
+            if (pointerId != int.MinValue) return;
+            pointerId = eventData.pointerId;
+            Apply(true);
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            if (pointerId != eventData.pointerId) return;
+            Release();
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            // Do not release when the finger moves outside: release only on pointer up.
+        }
+
+        private void OnDisable() => Release();
+
+        private void Release()
+        {
+            if (pointerId == int.MinValue) return;
+            pointerId = int.MinValue;
+            Apply(false);
+        }
+
+        private void Apply(bool pressed)
+        {
+            if (target != null) target.SetMobileButton((int)control, pressed);
         }
     }
 }
