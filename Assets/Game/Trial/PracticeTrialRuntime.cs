@@ -26,6 +26,17 @@ namespace NepalTrial.Trial
         private int nextCheckpoint;
         private bool complete;
 
+        public void Configure(CarDriveController vehicle, WheelCollider[] vehicleWheels, Transform[] gates, Text status, Text violations, Text progress)
+        {
+            car = vehicle;
+            wheels = vehicleWheels;
+            checkpoints = gates;
+            statusLabel = status;
+            violationsLabel = violations;
+            progressLabel = progress;
+            ResetAttempt();
+        }
+
         public int BoundaryContacts => boundaryState.ViolationCount;
         public int CheckpointsReached => nextCheckpoint;
         public bool Complete => complete;
