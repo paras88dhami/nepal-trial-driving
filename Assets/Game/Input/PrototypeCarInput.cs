@@ -6,42 +6,68 @@ using UnityEngine.InputSystem;
 
 namespace NepalTrial.Input
 {
-    /// <summary>Touch commands with keyboard fallback for desktop testing.</summary>
+    /// <summary>Independent touch buttons allow simultaneous steering, throttle and brake.</summary>
     public sealed class PrototypeCarInput : MonoBehaviour
     {
         [SerializeField] private CarDriveController car;
-        private float steering, throttle, brake;
-        private bool reverse, handbrake;
-        private bool touchActive;
+        private bool left, right, gas, stop, handbrake, reverse;
+        private bool mobileMode;
 
-        public void SetSteering(float value) { touchActive = true; steering = Mathf.Clamp(value, -1f, 1f); }
-        public void SetThrottle(float value) { touchActive = true; throttle = Mathf.Clamp01(value); }
-        public void SetBrake(float value) { touchActive = true; brake = Mathf.Clamp01(value); }
-        public void SetReverse(bool value) { touchActive = true; reverse = value; }
-        public void SetHandbrake(bool value) { touchActive = true; handbrake = value; }
-        public void UseKeyboard() { touchActive = false; steering = throttle = brake = 0f; handbrake = reverse = false; }
+        public void SetMobileButton(int button, bool pressed)
+        {
+            mobileMode = true;
+            switch (button)
+            {
+                case 0: left = pressed; break;
+                case 1: right = pressed; break;
+                case 2: gas = pressed; break;
+                case 3: stop = pressed; break;
+                case 4: handbrake = pressed; break;
+            }
+        }
+
+        public void SetReverse(bool value) { reverse = value; mobileMode = true; }
+        public void SetSteering(float value) { left = value < -0.01f; right = value > 0.01f; mobileMode = true; }
+        public void SetThrottle(float value) { gas = value > 0.01f; mobileMode = true; }
+        public void SetBrake(float value) { stop = value > 0.01f; mobileMode = true; }
+        public void SetHandbrake(bool value) { handbrake = value; mobileMode = true; }
+
+        public void UseKeyboard()
+        {
+            mobileMode = false;
+            left = right = gas = stop = handbrake = reverse = false;
+        }
+
+        private void OnDisable()
+        {
+            left = right = gas = stop = handbrake = reverse = false;
+            if (car != null) car.SetCommand(default);
+        }
 
         private void Update()
         {
+            float steer = (right ? 1f : 0f) - (left ? 1f : 0f);
+            float throttle = gas ? 1f : 0f;
+            float brake = stop ? 1f : 0f;
+            bool park = handbrake;
+            bool backward = reverse;
 #if ENABLE_INPUT_SYSTEM
-            if (!touchActive)
+            if (!mobileMode && Keyboard.current != null)
             {
-                var keyboard = Keyboard.current;
-                if (keyboard != null)
-                {
-                    steering = (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed ? -1f : 0f)
-                        + (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed ? 1f : 0f);
-                    throttle = keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed ? 1f : 0f;
-                    brake = keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed ? 1f : 0f;
-                    handbrake = keyboard.spaceKey.isPressed;
-                    reverse = keyboard.rKey.isPressed;
-                }
+                var k = Keyboard.current;
+                steer = (k.dKey.isPressed || k.rightArrowKey.isPressed ? 1f : 0f)
+                    - (k.aKey.isPressed || k.leftArrowKey.isPressed ? 1f : 0f);
+                throttle = k.wKey.isPressed || k.upArrowKey.isPressed ? 1f : 0f;
+                brake = k.sKey.isPressed || k.downArrowKey.isPressed ? 1f : 0f;
+                park = k.spaceKey.isPressed;
+                backward = k.rKey.isPressed;
             }
 #endif
             if (car != null)
-                car.SetCommand(new CarInputCommand {
-                    Steering = steering, Throttle = throttle, Brake = brake,
-                    Reverse = reverse, Handbrake = handbrake
+                car.SetCommand(new CarInputCommand
+                {
+                    Steering = steer, Throttle = throttle, Brake = brake,
+                    Reverse = backward, Handbrake = park
                 });
         }
     }
