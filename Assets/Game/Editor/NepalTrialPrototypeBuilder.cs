@@ -21,7 +21,7 @@ namespace NepalTrial.EditorTools
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             MakeCube("Ground", new Vector3(0,-.5f,0), new Vector3(75,1,65), Color.gray);
             var car = new GameObject("PrototypeCar");
-            car.transform.position = new Vector3(-7,1.2f,-12);
+            car.transform.position = new Vector3(-7,1.2f,-7);
             car.AddComponent<Rigidbody>();
             var carBody = MakeCube("CarBody", car.transform.position, new Vector3(1.75f,.7f,3.7f), Color.cyan);
             carBody.transform.SetParent(car.transform,true);
@@ -46,7 +46,7 @@ namespace NepalTrial.EditorTools
             camera.tag="MainCamera";
             camera.AddComponent<Camera>();
             camera.AddComponent<AudioListener>();
-            camera.transform.position=new Vector3(-7,5,-20);
+            camera.transform.position=new Vector3(-7,5,-16);
             camera.AddComponent<VehicleFollowCamera>().SetTarget(car.transform);
             var sunlight=new GameObject("Sun").AddComponent<Light>();
             sunlight.type=LightType.Directional;
@@ -62,11 +62,49 @@ namespace NepalTrial.EditorTools
             CreateButton(canvas.transform,"Right",new Vector2(320,120),new Vector2(160,130),input,MobileCarTouchControl.Control.SteerRight);
             CreateButton(canvas.transform,"Brake",new Vector2(-380,120),new Vector2(160,130),input,MobileCarTouchControl.Control.Brake,true);
             CreateButton(canvas.transform,"Gas",new Vector2(-170,120),new Vector2(160,130),input,MobileCarTouchControl.Control.Throttle,true);
+            // Ordered practice gates are placeholders, not government dimensions.
+            var gates = new Transform[4];
+            var gatePoints = new[]
+            {
+                new Vector3(-7f, .1f, -7f),
+                new Vector3(-14f, .1f, 0f),
+                new Vector3(7f, .1f, 7f),
+                new Vector3(14f, .1f, 0f)
+            };
+            for (int i = 0; i < gates.Length; i++)
+            {
+                var gate = new GameObject("Checkpoint_" + (i+1));
+                gate.transform.position = gatePoints[i];
+                gates[i] = gate.transform;
+            }
+            var wheelComponents = car.GetComponentsInChildren<WheelCollider>();
+            var trial = new GameObject("PracticeTrialRuntime").AddComponent<PracticeTrialRuntime>();
+            Text status = CreateHudLabel(canvas.transform, "Practice only - approximate geometry", new Vector2(0f, -55f));
+            Text warnings = CreateHudLabel(canvas.transform, "Boundary warnings: 0", new Vector2(0f, -110f));
+            Text progress = CreateHudLabel(canvas.transform, "Checkpoints: 0/4", new Vector2(0f, -165f));
+            trial.Configure(controller, wheelComponents, gates, status, warnings, progress);
             EditorSceneManager.MarkSceneDirty(scene);
             System.IO.Directory.CreateDirectory("Assets/Scenes");
             EditorSceneManager.SaveScene(scene,"Assets/Scenes/PrototypeCar.unity");
             Selection.activeGameObject=car;
             Debug.Log("Prototype scene generated. Open Assets/Scenes/PrototypeCar.unity. Test physics in Play Mode; not an official trial course.");
+        }
+
+        private static Text CreateHudLabel(Transform parent, string value, Vector2 offset)
+        {
+            var root = new GameObject("HUD_" + value, typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            root.transform.SetParent(parent, false);
+            var rect = root.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(.5f, 1f);
+            rect.sizeDelta = new Vector2(900f, 55f);
+            rect.anchoredPosition = offset;
+            var text = root.GetComponent<Text>();
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.text = value;
+            text.color = Color.white;
+            text.fontSize = 30;
+            text.alignment = TextAnchor.MiddleCenter;
+            return text;
         }
 
         private static GameObject MakeCube(string name,Vector3 position,Vector3 scale,Color color)
