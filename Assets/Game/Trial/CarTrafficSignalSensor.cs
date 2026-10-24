@@ -18,10 +18,12 @@ namespace NepalTrial.Trial
         public void SetLight(TrafficLightColor value) => light = value;
 
         private void Reset() => GetComponent<Collider>().isTrigger = true;
+        private void OnEnable() { if (trial != null) trial.AttemptRestarted += Clear; }
+        private void Clear() { overlaps.Clear(); validator.Reset(); }
 
         private void OnTriggerEnter(Collider other)
         {
-            if (trial == null || car == null || other.GetComponentInParent<CarDriveController>() != car
+            if (trial == null || trial.IsPaused || trial.State != ExamStage.Running || trial.CurrentStage != stageId || car == null || other.GetComponentInParent<CarDriveController>() != car
                 || !overlaps.Add(other) || overlaps.Count != 1) return;
             CourseEvent result = validator.Sample(true, light);
             if (result.Kind == CourseEventKind.Violation) trial.ReportViolation(result.Code);
@@ -36,6 +38,7 @@ namespace NepalTrial.Trial
 
         private void OnDisable()
         {
+            if (trial != null) trial.AttemptRestarted -= Clear;
             overlaps.Clear();
             validator.Reset();
         }
