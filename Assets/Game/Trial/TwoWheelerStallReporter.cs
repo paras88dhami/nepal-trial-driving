@@ -11,8 +11,23 @@ namespace NepalTrial.Trial
         private int lastSeenStalls;
         private int courseStalls;
 
-        private void OnEnable() { if (trial!=null) trial.AttemptRestarted+=ResetAttempt; }
-        private void OnDisable() { if (trial!=null) trial.AttemptRestarted-=ResetAttempt; }
+        private void OnEnable()
+        {
+            if (trial!=null)
+            {
+                trial.AttemptRestarted+=ResetAttempt;
+                trial.StageCompleted+=ResetStageStalls;
+            }
+        }
+        private void OnDisable()
+        {
+            if (trial!=null)
+            {
+                trial.AttemptRestarted-=ResetAttempt;
+                trial.StageCompleted-=ResetStageStalls;
+            }
+        }
+        private void ResetStageStalls(string stage) => courseStalls=0;
         public void ResetAttempt() { lastSeenStalls=0;courseStalls=0; }
 
         private void FixedUpdate()
