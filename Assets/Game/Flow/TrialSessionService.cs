@@ -75,12 +75,18 @@ namespace NepalTrial.Flow
                 error = "No unfinished session to resume.";
                 return false;
             }
-            string next = TrialCatalog.SceneFor(Current.vehicleId,Current.CurrentCourse);
+            // If a stage finished before leaving the game, resume the next stage rather
+            // than restarting the completed stage and risking duplicate score submission.
+            bool pendingNext = Current.mode == DriveMode.Exam && Current.AwaitingNext;
+            string course = pendingNext && Current.stageIndex + 1 < Current.courses.Length
+                ? Current.courses[Current.stageIndex + 1] : Current.CurrentCourse;
+            string next = TrialCatalog.SceneFor(Current.vehicleId,course);
             if (!Application.CanStreamedLevelBeLoaded(next))
             {
                 error = "Scene not in Build Settings: " + next;
                 return false;
             }
+            if (pendingNext && TrialSessionRules.Advance(Current)) Save();
             SceneManager.LoadScene(next);
             return true;
         }
