@@ -32,7 +32,7 @@ namespace NepalTrial.Flow
         public static bool StartNew(string vehicle, DriveMode mode, string course, out string error)
         {
             error = null;
-            var progress = new LocalProgressStore().Load();
+            var progress = TrialProgressBootstrap.LoadReady();
             if (progress.unlockedVehicleIds == null ||
                 !progress.unlockedVehicleIds.Contains(vehicle))
             {
@@ -166,6 +166,7 @@ namespace NepalTrial.Flow
             {
                 var candidate=JsonUtility.FromJson<TrialPlaySession>(json);
                 if (candidate == null || candidate.schemaVersion != 1 ||
+                    string.IsNullOrEmpty(candidate.runId) ||
                     !TrialCatalog.IsKnownVehicle(candidate.vehicleId) ||
                     candidate.courses == null || candidate.courses.Length == 0 ||
                     candidate.stageIndex < 0 || candidate.stageIndex >= candidate.courses.Length)
