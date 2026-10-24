@@ -13,6 +13,8 @@ namespace NepalTrial.Trial
         [SerializeField] private Text stateLabel;
         [SerializeField] private Text violationsLabel;
         [SerializeField] private GameObject resultsPanel;
+        [SerializeField] private CarFigureEightSensor figureEight;
+        [SerializeField] private Text checkpointLabel;
 
         private void Update()
         {
@@ -22,6 +24,8 @@ namespace NepalTrial.Trial
             if (timeLabel != null) timeLabel.text = "Time: " + Mathf.CeilToInt(trial.RemainingSeconds);
             if (stateLabel != null) stateLabel.text = trial.IsPaused ? "Paused" : trial.State.ToString();
             if (violationsLabel != null) violationsLabel.text = "Violations: " + trial.ViolationCount;
+            if (checkpointLabel != null) checkpointLabel.text = figureEight != null ?
+                "Checkpoints: " + figureEight.CheckpointsReached + "/" + figureEight.CheckpointCount : "";
             if (resultsPanel != null)
             {
                 bool finished = trial.State == ExamStage.Passed || trial.State == ExamStage.Failed
