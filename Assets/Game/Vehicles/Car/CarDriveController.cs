@@ -93,7 +93,8 @@ namespace NepalTrial.Vehicles.Car
             frontLeft.steerAngle = steering;
             frontRight.steerAngle = steering;
 
-            float signedThrottle = transmission.SignedThrottle(command.Throttle);
+            // Never propel in the old direction while a requested gear change is blocked.
+            float signedThrottle = transmission.Gear == requested ? transmission.SignedThrottle(command.Throttle) : 0f;
             float requestedTorque = CarDriveMath.DriveTorque(signedThrottle, SpeedKph,
                 topSpeedKph, command.Brake, transmission.HandbrakeOn) * motorTorque;
             rearLeft.motorTorque = requestedTorque * 0.5f;
