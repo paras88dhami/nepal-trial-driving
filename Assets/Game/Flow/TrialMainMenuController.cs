@@ -106,11 +106,17 @@ namespace NepalTrial.Flow
             });
             var previous = TrialSessionService.Current;
             if (previous != null && !previous.ended)
-                Button("Resume " + TrialCatalog.DisplayVehicle(previous.vehicleId) +
-                    " (" + (previous.stageIndex+1) + "/" + previous.courses.Length + ")",() =>
-                {
-                    if (!TrialSessionService.Resume(out error)) Build();
-                });
+            {
+                if (previous.connectedExam)
+                    AddText("An interrupted connected exam must currently be restarted.",22,
+                        new Color(1f,.70f,.32f),45);
+                else
+                    Button("Resume " + TrialCatalog.DisplayVehicle(previous.vehicleId) +
+                        " (" + (previous.stageIndex+1) + "/" + previous.courses.Length + ")",() =>
+                    {
+                        if (!TrialSessionService.Resume(out error)) Build();
+                    });
+            }
             if (previous != null && previous.ended)
                 AddText("Last run: " + (previous.passed ? "Passed" : "Failed") +
                     " | Score " + previous.finalScore,24,Color.white,42);
