@@ -173,7 +173,7 @@ namespace NepalTrial.EditorTools
             var rigidbody=root.AddComponent<Rigidbody>();
             rigidbody.interpolation=RigidbodyInterpolation.Interpolate;
             var ride=root.AddComponent<TwoWheelerRigidbodyController>();
-            Int(ride,"kind",(int)kind);
+            Enum(ride,"kind",(int)kind);
             var chassis=Block("Chassis",position+new Vector3(0,.05f,0),
                 new Vector3(.48f,.35f,1.28f),body,false);
             chassis.transform.SetParent(root.transform,true);
