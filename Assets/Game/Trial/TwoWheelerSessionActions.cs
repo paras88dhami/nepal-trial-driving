@@ -1,6 +1,8 @@
 using NepalTrial.Input;
 using NepalTrial.Vehicles.TwoWheeler;
 using UnityEngine;
+using NepalTrial.Flow;
+using UnityEngine.SceneManagement;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -15,6 +17,8 @@ namespace NepalTrial.Trial
         [SerializeField] private TwoWheelerInput input;
         private Rigidbody body;
         private bool frozen;
+        private bool freeDrivePaused;
+        private bool FreeDrive => TrialSessionService.IsFreeDriveScene(SceneManager.GetActiveScene().name);
         private Vector3 savedVelocity, savedAngularVelocity;
 
         private void Awake() { if (vehicle != null) body = vehicle.GetComponent<Rigidbody>(); }
@@ -30,10 +34,13 @@ namespace NepalTrial.Trial
 #endif
         }
 
-        public void TogglePause() { if (trial != null) SetPaused(!trial.IsPaused); }
+        public void TogglePause() { if (trial != null) SetPaused(!(FreeDrive ? freeDrivePaused : trial.IsPaused)); }
         public void SetPaused(bool value)
         {
-            if (trial == null || !trial.SetPaused(value) || body == null || frozen == value) return;
+            if (trial == null) return;
+            if (FreeDrive) freeDrivePaused = value;
+            else if (!trial.SetPaused(value)) return;
+            if (body == null || frozen == value) return;
             if (value)
             {
                 savedVelocity = body.linearVelocity;
@@ -59,6 +66,7 @@ namespace NepalTrial.Trial
             if (trial == null) return;
             if (frozen && body != null) body.isKinematic = false;
             frozen = false;
+            freeDrivePaused = false;
             if (input != null) input.ResetVehicle();
             else if (vehicle != null) vehicle.ResetVehicle();
             trial.RestartAttempt();
