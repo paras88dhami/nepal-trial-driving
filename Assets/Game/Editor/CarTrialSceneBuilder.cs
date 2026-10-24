@@ -289,6 +289,7 @@ namespace NepalTrial.EditorTools
             text.fontSize = fontSize;
             text.color = Color.white;
             text.alignment = TextAnchor.MiddleCenter;
+            text.raycastTarget = false; // Only clickable images should receive UI pointer events.
             return text;
         }
 
