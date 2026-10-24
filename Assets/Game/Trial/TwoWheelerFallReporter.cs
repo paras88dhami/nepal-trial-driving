@@ -32,9 +32,10 @@ namespace NepalTrial.Trial
             if (fall.Kind == CourseEventKind.Violation) trial.ReportViolation(fallCode);
             bool footDown = vehicle.FootDown;
             // Plank/ramp/bumpy sensors own their foot-down violations: avoid double charging.
-            bool handledByCourse = trial.CurrentStage == "narrow-plank" ||
-                trial.CurrentStage == "ramp" || trial.CurrentStage == "speed-breaker";
-            if (footDown && !footPreviouslyDown && !handledByCourse)
+            // The general foot-down deduction applies to Figure-8 only.
+            // Plank, ramp and bumps have their own course-specific sensors and
+            // more severe or differently scored rules.
+            if (footDown && !footPreviouslyDown && trial.CurrentStage == "figure-eight")
                 trial.ReportViolation(footDownCode);
             footPreviouslyDown = footDown;
         }
