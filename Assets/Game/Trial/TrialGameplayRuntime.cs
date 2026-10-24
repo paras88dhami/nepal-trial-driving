@@ -28,6 +28,8 @@ namespace NepalTrial.Trial
         public int Score => coordinator == null ? startingScore : coordinator.Score;
         public string CurrentStage => coordinator == null ? "" : coordinator.CurrentStage;
         public float RemainingSeconds => coordinator == null ? durationSeconds : coordinator.RemainingSeconds;
+        public bool IsPaused => coordinator != null && coordinator.IsPaused;
+        public int ViolationCount => coordinator == null ? 0 : coordinator.ViolationCount;
         public event Action<ExamStage> Finished;
 
         private void Awake()
@@ -55,6 +57,8 @@ namespace NepalTrial.Trial
         }
 
         public bool StartAttempt() => coordinator != null && coordinator.Start();
+
+        public bool SetPaused(bool paused) => coordinator != null && coordinator.SetPaused(paused);
 
         private void Update()
         {
