@@ -95,6 +95,16 @@ namespace NepalTrial.Trial
             return true;
         }
 
+        public bool RestoreCheckpoint(int stageIndex,int overallScore,
+            int violations,float remainingSeconds)
+        {
+            if(coordinator==null || coordinator.State==ExamStage.Failed ||
+                coordinator.State==ExamStage.Passed)return false;
+            coordinator.RestoreCheckpoint(stageIndex,overallScore,violations,remainingSeconds);
+            recorded=false;
+            return true;
+        }
+
         public void RestartAttempt()
         {
             if (coordinator == null) return;
