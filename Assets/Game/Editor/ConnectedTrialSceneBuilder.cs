@@ -255,6 +255,16 @@ namespace NepalTrial.EditorTools
                                         if (!twoWheeler && sharedCar!=null)
                                             replacement=sharedCar.GetComponent<BoxCollider>();
                                         break;
+                                    case "frontWheel":
+                                        if(twoWheeler && sharedBike!=null)
+                                            replacement=sharedBike.transform.Find("FrontWheelCollider")
+                                                ?.GetComponent<WheelCollider>();
+                                        break;
+                                    case "rearWheel":
+                                        if(twoWheeler && sharedBike!=null)
+                                            replacement=sharedBike.transform.Find("RearWheelCollider")
+                                                ?.GetComponent<WheelCollider>();
+                                        break;
                                 }
                                 if(replacement==null || replacement==original)continue;
                                 field.objectReferenceValue=replacement;
