@@ -49,6 +49,11 @@ namespace NepalTrial.Mobile
                 if (pressed) target.ToggleReverse();
                 return;
             }
+            if (control == Control.Handbrake)
+            {
+                if (pressed) target.ToggleHandbrake();
+                return;
+            }
             if (control == Control.Reset)
             {
                 if (pressed) target.ResetCar();
