@@ -12,6 +12,7 @@ namespace NepalTrial.Input
         [SerializeField] private CarDriveController car;
         private bool left, right, gas, stop, handbrake, reverse;
         private bool mobileMode;
+        private bool keyboardReverse;
 
         public void SetMobileButton(int button, bool pressed)
         {
@@ -27,6 +28,13 @@ namespace NepalTrial.Input
         }
 
         public void SetReverse(bool value) { reverse = value; mobileMode = true; }
+        public void ToggleReverse() { reverse = !reverse; mobileMode = true; }
+        public void ResetCar()
+        {
+            reverse = keyboardReverse = false;
+            left = right = gas = stop = handbrake = false;
+            if (car != null) car.ResetVehicle();
+        }
         public void SetSteering(float value) { left = value < -0.01f; right = value > 0.01f; mobileMode = true; }
         public void SetThrottle(float value) { gas = value > 0.01f; mobileMode = true; }
         public void SetBrake(float value) { stop = value > 0.01f; mobileMode = true; }
@@ -35,12 +43,13 @@ namespace NepalTrial.Input
         public void UseKeyboard()
         {
             mobileMode = false;
+            keyboardReverse = false;
             left = right = gas = stop = handbrake = reverse = false;
         }
 
         private void OnDisable()
         {
-            left = right = gas = stop = handbrake = reverse = false;
+            left = right = gas = stop = handbrake = reverse = keyboardReverse = false;
             if (car != null) car.SetCommand(default);
         }
 
@@ -60,7 +69,9 @@ namespace NepalTrial.Input
                 throttle = k.wKey.isPressed || k.upArrowKey.isPressed ? 1f : 0f;
                 brake = k.sKey.isPressed || k.downArrowKey.isPressed ? 1f : 0f;
                 park = k.spaceKey.isPressed;
-                backward = k.rKey.isPressed;
+                if (k.rKey.wasPressedThisFrame) keyboardReverse = !keyboardReverse;
+                if (k.tKey.wasPressedThisFrame) ResetCar();
+                backward = keyboardReverse;
             }
 #endif
             if (car != null)
