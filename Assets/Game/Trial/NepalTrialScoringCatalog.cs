@@ -48,6 +48,7 @@ namespace NepalTrial.Trial
                 // The existing sensors report boundary *departures*, not a gentle
                 // painted-line touch. Leaving the lane is immediately disqualifying.
                 new Rule("figure-eight-boundary",0,1),
+                new Rule("figure-eight-reverse",0,1),
                 new Rule("figure-eight-line-touch",5,twoWheeler?2:3),
                 new Rule("u-turn-boundary",0,1),
                 new Rule("u-turn-incomplete",0,1),
@@ -83,6 +84,8 @@ namespace NepalTrial.Trial
             else
             {
                 rules.Add(new Rule("hill-rollback",0,1));
+                rules.Add(new Rule("hill-no-stop",0,1));
+                rules.Add(new Rule("figure-eight-stall",0,1));
                 rules.Add(new Rule("hill-timeout",0,1));
                 rules.Add(new Rule("garage-obstruction",0,1));
                 rules.Add(new Rule("garage-forward-correction",10,2));
