@@ -3,77 +3,189 @@ using UnityEngine;
 namespace NepalTrial.Vehicles.TwoWheeler
 {
     /// <summary>
-    /// Experimental Rigidbody two-wheeler with assisted upright balance.
-    /// Not a validated motorcycle simulation; adjust collider/contact geometry in Unity.
+    /// Physics-connected two-wheeler foundation using front/rear WheelColliders.
+    /// The assisted balance is deliberately arcade-like: tune on real Android hardware.
+    /// No claim of exact motorcycle dynamics or official Nepal vehicle parameters.
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     public sealed class TwoWheelerRigidbodyController : MonoBehaviour
     {
+        [Header("Vehicle and wheels")]
         [SerializeField] private TwoWheelerKind kind = TwoWheelerKind.Motorcycle;
-        [SerializeField, Min(0f)] private float driveAcceleration = 4f;
-        [SerializeField, Min(0f)] private float brakingAcceleration = 8f;
-        [SerializeField, Min(1f)] private float speedLimitKph = 30f;
-        [SerializeField, Min(0f)] private float maxYawRateDegrees = 65f;
-        [SerializeField, Min(0f)] private float uprightStrength = 25f;
-        [SerializeField, Min(0f)] private float uprightDamping = 6f;
-        [SerializeField, Min(0f)] private float maxLeanDegrees = 24f;
-        [SerializeField, Min(0f)] private float leanResponse = 80f;
+        [SerializeField] private WheelCollider frontWheel;
+        [SerializeField] private WheelCollider rearWheel;
+        [SerializeField] private Transform frontWheelVisual;
+        [SerializeField] private Transform rearWheelVisual;
         [SerializeField] private Transform visualBody;
+
+        [Header("Drive and brakes")]
+        [SerializeField, Min(0f)] private float rearMotorTorque = 160f;
+        [SerializeField, Min(0f)] private float frontBrakeTorque = 250f;
+        [SerializeField, Min(0f)] private float rearBrakeTorque = 220f;
+        [SerializeField, Min(1f)] private float speedLimitKph = 40f;
+        [SerializeField, Range(1f,40f)] private float maxSteerAngle = 24f;
+        [SerializeField, Range(.1f,1f)] private float highSpeedSteerFraction = .38f;
+        [SerializeField, Min(1f)] private float reduceSteeringAtKph = 35f;
+
+        [Header("Stability and body")]
+        [SerializeField, Min(30f)] private float vehicleMassKg = 170f;
+        [SerializeField] private Vector3 centerOfMassOffset = new Vector3(0f,-.4f,0f);
+        [SerializeField, Min(0f)] private float balanceStrength = 35f;
+        [SerializeField, Min(0f)] private float balanceDamping = 7f;
+        [SerializeField, Range(0f,40f)] private float maximumAssistedLean = 17f;
+        [SerializeField, Min(0f)] private float leanResponseDegreesPerSecond = 90f;
+        [SerializeField, Min(0f)] private float turningAssist = 1.8f;
+        [SerializeField, Min(0f)] private float fallingThresholdDegrees = 57f;
+
         private Rigidbody body;
         private TwoWheelerDynamics dynamics;
-        private float throttle;
-        private float brake;
-        private float steering;
-        private bool enabledDrive = true;
+        private TwoWheelerTransmission transmission;
+        private TwoWheelerControlCommand command;
+        private Vector3 spawnPosition;
+        private Quaternion spawnRotation;
+        private bool driveEnabled = true;
 
+        public TwoWheelerKind Kind => kind;
+        public MotorcycleGear CurrentGear => transmission == null ? MotorcycleGear.Neutral : transmission.Gear;
         public float SpeedKph => body == null ? 0f : body.linearVelocity.magnitude * 3.6f;
+        public float ForwardSpeedKph => body == null ? 0f :
+            Vector3.Dot(body.linearVelocity, transform.forward) * 3.6f;
         public float LeanDegrees => dynamics == null ? 0f : dynamics.LeanDegrees;
+        public float TiltDegrees => Vector3.Angle(transform.up, Vector3.up);
+        public bool HasFallen => TiltDegrees >= fallingThresholdDegrees;
+        public bool FrontGrounded => frontWheel != null && frontWheel.isGrounded;
+        public bool RearGrounded => rearWheel != null && rearWheel.isGrounded;
+        public bool FootDown => command.FootDown;
+        public bool LeftIndicator => command.LeftIndicator;
+        public bool RightIndicator => command.RightIndicator;
+        public bool ClutchPressed => command.Clutch >= .5f;
 
         private void Awake()
         {
             body = GetComponent<Rigidbody>();
-            dynamics = new TwoWheelerDynamics(kind);
+            spawnPosition = body.position;
+            spawnRotation = body.rotation;
+            body.mass = Mathf.Max(30f, vehicleMassKg);
+            body.centerOfMass += centerOfMassOffset;
             body.interpolation = RigidbodyInterpolation.Interpolate;
+            body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            dynamics = new TwoWheelerDynamics(kind);
+            transmission = new TwoWheelerTransmission(kind);
+            if (frontWheel == null || rearWheel == null)
+            {
+                Debug.LogError("Assign both WheelColliders to the two-wheeler controller.",this);
+                enabled = false;
+            }
         }
 
         public void SetControls(float requestedThrottle, float requestedBrake, float requestedSteering)
         {
-            throttle = Mathf.Clamp01(requestedThrottle);
-            brake = Mathf.Clamp01(requestedBrake);
-            steering = Mathf.Clamp(requestedSteering, -1f, 1f);
+            command = new TwoWheelerControlCommand
+            {
+                Throttle = requestedThrottle,
+                FrontBrake = requestedBrake,
+                RearBrake = requestedBrake,
+                Steering = requestedSteering
+            }.Clamped();
         }
 
-        public void SetDriveEnabled(bool value) => enabledDrive = value;
+        public void SetControls(TwoWheelerControlCommand next) => command = next.Clamped();
+        public void SetDriveEnabled(bool value) => driveEnabled = value;
+
+        public bool SelectGear(MotorcycleGear gear)
+        {
+            return transmission != null &&
+                transmission.SelectGear(gear, command.Clutch >= .5f, Mathf.Abs(ForwardSpeedKph) / 3.6f);
+        }
+
+        public void ResetVehicle()
+        {
+            if (body == null) return;
+            body.position = spawnPosition;
+            body.rotation = spawnRotation;
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            command = default;
+            driveEnabled = true;
+            if (transmission != null) transmission.Reset();
+            if (dynamics != null) dynamics.Reset();
+            ClearWheelForces();
+            body.WakeUp();
+        }
+
+        private void ClearWheelForces()
+        {
+            if (frontWheel != null)
+            {
+                frontWheel.motorTorque = 0f;
+                frontWheel.brakeTorque = 0f;
+                frontWheel.steerAngle = 0f;
+            }
+            if (rearWheel != null)
+            {
+                rearWheel.motorTorque = 0f;
+                rearWheel.brakeTorque = 0f;
+                rearWheel.steerAngle = 0f;
+            }
+        }
 
         private void FixedUpdate()
         {
-            if (body == null || dynamics == null) return;
+            if (body == null || frontWheel == null || rearWheel == null) return;
             float dt = Time.fixedDeltaTime;
-            float currentThrottle = enabledDrive ? throttle : 0f;
-            dynamics.Step(currentThrottle, brake, steering, SpeedKph / 3.6f, dt, maxLeanDegrees, leanResponse);
+            float forwardSpeed = Mathf.Abs(ForwardSpeedKph);
+            float effectiveThrottle = driveEnabled ? command.Throttle : 0f;
+            dynamics.Step(effectiveThrottle,Mathf.Max(command.FrontBrake,command.RearBrake),
+                command.Steering,SpeedKph / 3.6f,dt,maximumAssistedLean,
+                leanResponseDegreesPerSecond);
 
-            Vector3 planarVelocity = Vector3.ProjectOnPlane(body.linearVelocity, Vector3.up);
-            float forwardSpeed = Vector3.Dot(planarVelocity, transform.forward);
-            if (currentThrottle > 0f && forwardSpeed * 3.6f < speedLimitKph && brake < 0.01f)
-                body.AddForce(transform.forward * driveAcceleration * currentThrottle, ForceMode.Acceleration);
-            if (brake > 0f && planarVelocity.sqrMagnitude > 0.0001f)
-                body.AddForce(-planarVelocity.normalized * Mathf.Min(brakingAcceleration * brake, planarVelocity.magnitude / dt), ForceMode.Acceleration);
+            bool driveGear = transmission.CanDrive(command.Clutch >= .5f);
+            frontWheel.motorTorque = 0f;
+            rearWheel.motorTorque = TwoWheelerDriveMath.MotorTorque(
+                effectiveThrottle,forwardSpeed,speedLimitKph,rearMotorTorque,
+                driveEnabled,driveGear,command.FrontBrake,command.RearBrake);
+            frontWheel.brakeTorque = TwoWheelerDriveMath.BrakeTorque(
+                command.FrontBrake,frontBrakeTorque);
+            rearWheel.brakeTorque = TwoWheelerDriveMath.BrakeTorque(
+                command.RearBrake,rearBrakeTorque);
+            frontWheel.steerAngle = TwoWheelerDriveMath.SteeringAngle(
+                command.Steering,SpeedKph,maxSteerAngle,highSpeedSteerFraction,
+                reduceSteeringAtKph);
 
-            float movingFactor = Mathf.Clamp01(Mathf.Abs(forwardSpeed) / 2f);
-            body.MoveRotation(body.rotation * Quaternion.Euler(0f, steering * maxYawRateDegrees * movingFactor * dt, 0f));
+            // Upright assist works on Rigidbody torque, NOT teleporting the rotation.
+            // Lean is a speed-dependent target, reduced when the player brakes.
+            Vector3 desiredUp = Quaternion.AngleAxis(dynamics.LeanDegrees,transform.forward) * Vector3.up;
+            Vector3 rollCorrection = Vector3.Cross(transform.up,desiredUp);
+            Vector3 tiltAngularVelocity = Vector3.ProjectOnPlane(body.angularVelocity,Vector3.up);
+            if (FrontGrounded || RearGrounded)
+            {
+                body.AddTorque(rollCorrection * balanceStrength -
+                    tiltAngularVelocity * balanceDamping,ForceMode.Acceleration);
+                if (FrontGrounded && forwardSpeed > .5f)
+                    body.AddTorque(Vector3.up * command.Steering *
+                        turningAssist * Mathf.Clamp01(forwardSpeed / 18f),
+                        ForceMode.Acceleration);
+            }
 
-            // Applies an assisted righting torque; dynamic behavior requires tuning.
-            Vector3 desiredUp = Quaternion.AngleAxis(dynamics.LeanDegrees, transform.forward) * Vector3.up;
-            Vector3 correction = Vector3.Cross(transform.up, desiredUp);
-            body.AddTorque(correction * uprightStrength - body.angularVelocity * uprightDamping, ForceMode.Acceleration);
             if (visualBody != null)
                 visualBody.localRotation = Quaternion.Lerp(visualBody.localRotation,
-                    Quaternion.Euler(0f, 0f, dynamics.LeanDegrees), Mathf.Clamp01(dt * 8f));
+                    Quaternion.Euler(0f,0f,dynamics.LeanDegrees * .35f),
+                    Mathf.Clamp01(dt*6f));
+            UpdateVisual(frontWheel,frontWheelVisual);
+            UpdateVisual(rearWheel,rearWheelVisual);
+        }
+
+        private static void UpdateVisual(WheelCollider wheel,Transform target)
+        {
+            if (wheel == null || target == null) return;
+            wheel.GetWorldPose(out Vector3 position,out Quaternion rotation);
+            target.SetPositionAndRotation(position,rotation);
         }
 
         private void OnDisable()
         {
-            throttle = brake = steering = 0f;
+            command = default;
+            ClearWheelForces();
             if (dynamics != null) dynamics.Reset();
         }
     }
