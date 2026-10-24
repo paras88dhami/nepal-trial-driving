@@ -17,6 +17,23 @@ namespace NepalTrial.Flow
             "figure-eight", "narrow-plank", "u-turn", "traffic-light", "speed-breaker", "ramp", "behavior"
         };
 
+        public static string[] ConnectedExamStagesFor(string vehicle)
+        {
+            if (!IsKnownVehicle(vehicle)) throw new ArgumentException("Unknown vehicle.",nameof(vehicle));
+            return vehicle == StarterCar
+                ? new[] { "figure-eight", "speed-breaker", "u-turn", "traffic-light",
+                    "hill-start", "garage", "behavior" }
+                : CoursesFor(vehicle);
+        }
+
+        public static string ConnectedExamSceneFor(string vehicle)
+        {
+            if (vehicle == StarterCar) return "NepalTrial_FullCar";
+            if (vehicle == StarterMotorcycle) return "NepalTrial_FullMotorcycle";
+            if (vehicle == StarterScooter) return "NepalTrial_FullScooter";
+            return null;
+        }
+
         public static bool IsKnownVehicle(string id)
         {
             foreach (string vehicle in Vehicles) if (vehicle == id) return true;
