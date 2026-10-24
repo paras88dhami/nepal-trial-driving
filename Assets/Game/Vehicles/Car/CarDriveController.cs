@@ -13,6 +13,7 @@ namespace NepalTrial.Vehicles.Car
         [SerializeField] private WheelCollider rearRight;
 
         [Header("Tuning")]
+        [SerializeField, Min(100f)] private float vehicleMassKg = 1050f;
         [SerializeField, Min(0)] private float motorTorque = 1100f;
         [SerializeField, Min(0)] private float brakeTorque = 2400f;
         [SerializeField, Range(5, 45)] private float maxSteerAngle = 30f;
@@ -34,7 +35,7 @@ namespace NepalTrial.Vehicles.Car
         private void Awake()
         {
             body = GetComponent<Rigidbody>();
-            body.mass = 1050f;
+            body.mass = Mathf.Max(100f, vehicleMassKg);
             body.interpolation = RigidbodyInterpolation.Interpolate;
             resetPosition = body.position;
             resetRotation = body.rotation;
@@ -102,10 +103,12 @@ namespace NepalTrial.Vehicles.Car
             rearRight.motorTorque = requestedTorque * 0.5f;
 
             float normalBrake = CarDriveMath.BrakeTorque(command.Brake, brakeTorque);
-            frontLeft.brakeTorque = normalBrake;
-            frontRight.brakeTorque = normalBrake;
-            rearLeft.brakeTorque = normalBrake + (transmission.HandbrakeOn ? handbrakeTorque : 0f);
-            rearRight.brakeTorque = normalBrake + (transmission.HandbrakeOn ? handbrakeTorque : 0f);
+            // Park must physically hold all wheels; Neutral intentionally rolls freely.
+            float parkTorque = transmission.Gear == DriveGear.Park ? handbrakeTorque : 0f;
+            frontLeft.brakeTorque = normalBrake + parkTorque;
+            frontRight.brakeTorque = normalBrake + parkTorque;
+            rearLeft.brakeTorque = normalBrake + Mathf.Max(parkTorque, transmission.HandbrakeOn ? handbrakeTorque : 0f);
+            rearRight.brakeTorque = normalBrake + Mathf.Max(parkTorque, transmission.HandbrakeOn ? handbrakeTorque : 0f);
         }
 
         private void OnDisable()
