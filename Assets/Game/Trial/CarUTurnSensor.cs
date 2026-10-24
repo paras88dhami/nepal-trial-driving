@@ -31,6 +31,10 @@ namespace NepalTrial.Trial
         {
             if (running || car == null || trial == null || trial.State != ExamStage.Running ||
                 trial.IsPaused || trial.CurrentStage != stageId) return;
+            // Older practice scenes have no indicator component yet.
+            // Install it in PlayMode so the U-turn has keyboard/mobile inputs.
+            if(car.GetComponent<CarTurnIndicators>()==null)
+                car.gameObject.AddComponent<CarTurnIndicators>();
             validator = new UTurnValidator(minimumTurnDegrees, maximumSeconds);
             validator.Begin();
             lastHeading = car.transform.eulerAngles.y;
