@@ -65,7 +65,22 @@ namespace NepalTrial.Trial
 
             Vector3 position=car.transform.position;
             if(!enteredApproach && InsideXZ(approachLeg,position,-.15f))
-                enteredApproach=true;
+            {
+                // Arm only after ALL wheel contacts have safely entered the
+                // approach lane; otherwise the rear tire crossing the start
+                // line would be mistaken for leaving the boundary.
+                bool allWheelsIn=true;
+                if(wheels==null || wheels.Length==0)allWheelsIn=false;
+                else foreach(WheelCollider wheel in wheels)
+                {
+                    if(wheel==null){allWheelsIn=false;break;}
+                    WheelHit hit;
+                    Vector3 p=wheel.GetGroundHit(out hit)?hit.point:
+                        wheel.transform.position-wheel.transform.up*wheel.radius;
+                    if(!InsideXZ(approachLeg,p,.01f)){allWheelsIn=false;break;}
+                }
+                enteredApproach=allWheelsIn;
+            }
             if(!enteredApproach){previousPosition=position;previousKnown=true;return;}
 
             if(previousKnown)
