@@ -32,7 +32,9 @@ namespace NepalTrial.Flow
         {
             TrialPlaySession session = Current;
             return session != null &&
-                TrialCatalog.SceneFor(session.vehicleId,session.CurrentCourse) == sceneName;
+                (session.connectedExam
+                    ? TrialCatalog.ConnectedExamSceneFor(session.vehicleId)
+                    : TrialCatalog.SceneFor(session.vehicleId,session.CurrentCourse)) == sceneName;
         }
 
         public static bool IsFreeDriveScene(string sceneName)
@@ -49,9 +51,13 @@ namespace NepalTrial.Flow
                 return false;
             }
             TrialPlaySession proposed;
-            try { proposed = TrialSessionRules.Create(vehicle,mode,course); }
+            try { proposed = mode == DriveMode.Exam
+                    ? TrialSessionRules.CreateConnectedExam(vehicle)
+                    : TrialSessionRules.Create(vehicle,mode,course); }
             catch (ArgumentException ex) { error=ex.Message; return false; }
-            string sceneName = TrialCatalog.SceneFor(proposed.vehicleId,proposed.CurrentCourse);
+            string sceneName = proposed.connectedExam
+                ? TrialCatalog.ConnectedExamSceneFor(proposed.vehicleId)
+                : TrialCatalog.SceneFor(proposed.vehicleId,proposed.CurrentCourse);
             if (!Application.CanStreamedLevelBeLoaded(sceneName))
             {
                 error = "Scene not in Build Settings: " + sceneName +
@@ -73,6 +79,12 @@ namespace NepalTrial.Flow
             if (Current == null || Current.ended)
             {
                 error = "No unfinished session to resume.";
+                return false;
+            }
+            if (Current.connectedExam)
+            {
+                error = "Connected exam checkpoint recovery is not implemented yet. " +
+                    "Use Reset unfinished session before starting a new exam.";
                 return false;
             }
             // If a stage finished before leaving the game, resume the next stage rather
@@ -103,7 +115,7 @@ namespace NepalTrial.Flow
         public static bool Advance(out string error)
         {
             error=null;
-            if (Current == null || !Current.AwaitingNext ||
+            if (Current == null || Current.connectedExam || !Current.AwaitingNext ||
                 Current.stageIndex >= Current.courses.Length - 1)
             {
                 error = "The current exam stage is not ready to advance.";
@@ -130,10 +142,14 @@ namespace NepalTrial.Flow
                 // A finished exam restarts at its first stage, never at the scene
                 // where the old exam happened to end.
                 var old = Current;
-                current = TrialSessionRules.Create(old.vehicleId,old.mode,
-                    old.mode == DriveMode.Exam ? null : old.CurrentCourse);
+                current = old.connectedExam
+                    ? TrialSessionRules.CreateConnectedExam(old.vehicleId)
+                    : TrialSessionRules.Create(old.vehicleId,old.mode,
+                        old.mode == DriveMode.Exam ? null : old.CurrentCourse);
                 Save();
-                string first = TrialCatalog.SceneFor(current.vehicleId,current.CurrentCourse);
+                string first = current.connectedExam
+                    ? TrialCatalog.ConnectedExamSceneFor(current.vehicleId)
+                    : TrialCatalog.SceneFor(current.vehicleId,current.CurrentCourse);
                 if (Application.CanStreamedLevelBeLoaded(first) &&
                     SceneManager.GetActiveScene().name != first)
                     SceneManager.LoadScene(first);
@@ -195,7 +211,9 @@ namespace NepalTrial.Flow
                     candidate.courses == null || candidate.courses.Length == 0 ||
                     candidate.stageIndex < 0 || candidate.stageIndex >= candidate.courses.Length)
                     return;
-                string[] expected=TrialCatalog.CoursesFor(candidate.vehicleId);
+                string[] expected=candidate.connectedExam
+                    ? TrialCatalog.ConnectedExamStagesFor(candidate.vehicleId)
+                    : TrialCatalog.CoursesFor(candidate.vehicleId);
                 if (candidate.mode == DriveMode.Exam)
                 {
                     if (candidate.courses.Length != expected.Length) return;
