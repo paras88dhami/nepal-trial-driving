@@ -20,8 +20,14 @@ namespace NepalTrial.Flow
         private bool vibrationEnabled;
         private float lastVibrationTime = -10f;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Attach()
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void Install()
+        {
+            SceneManager.sceneLoaded -= Attach;
+            SceneManager.sceneLoaded += Attach;
+        }
+
+        private static void Attach(Scene scene, LoadSceneMode mode)
         {
             if (FindFirstObjectByType<TrialSceneRelay>() != null) return;
             if (FindFirstObjectByType<TrialGameplayRuntime>() == null) return;
