@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using NepalTrial.Progress;
+using NepalTrial.Flow;
+using UnityEngine.SceneManagement;
 using UnityEngine;
 
 namespace NepalTrial.Trial
@@ -55,7 +57,9 @@ namespace NepalTrial.Trial
 
         private void Start()
         {
-            if (startAutomatically) StartAttempt();
+            // Free Drive uses the selected scene without timed exam progression.
+            if (startAutomatically && !TrialSessionService.IsFreeDriveScene(SceneManager.GetActiveScene().name))
+                StartAttempt();
         }
 
         public bool StartAttempt() => coordinator != null && coordinator.Start();
@@ -107,10 +111,20 @@ namespace NepalTrial.Trial
             recorded = true;
             if (coordinator.State == ExamStage.Passed || coordinator.State == ExamStage.Failed)
             {
-                var store = new LocalProgressStore();
-                var progress = store.Load();
-                ProgressRules.RecordAttempt(progress, courseId, coordinator.Score, coordinator.State == ExamStage.Passed);
-                store.Save(progress);
+                // Exam aggregate results are recorded by TrialSessionService.
+                // Free Drive never records scores or attempts.
+                var active = TrialSessionService.Current;
+                bool sessionScene = TrialSessionService.IsSessionScene(SceneManager.GetActiveScene().name);
+                bool deferred = sessionScene && active != null &&
+                    (active.mode == DriveMode.Exam || active.mode == DriveMode.FreeDrive);
+                if (!deferred)
+                {
+                    var store = new LocalProgressStore();
+                    var progress = store.Load();
+                    ProgressRules.RecordAttempt(progress, courseId, coordinator.Score,
+                        coordinator.State == ExamStage.Passed);
+                    store.Save(progress);
+                }
             }
             Finished?.Invoke(coordinator.State);
         }
