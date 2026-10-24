@@ -47,6 +47,75 @@ namespace NepalTrial.EditorTools
             }
         }
 
+        [MenuItem("Nepal Trial/Connected Exam/Audit All Three Connected Grounds")]
+        public static void AuditAll()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            string previous=SceneManager.GetActiveScene().path;
+            int errors=0;
+            try
+            {
+                foreach(string vehicle in TrialCatalog.Vehicles)
+                {
+                    string path=Folder+"/"+TrialCatalog.ConnectedExamSceneFor(vehicle)+".unity";
+                    if(!File.Exists(path))
+                    {
+                        Debug.LogError("Missing connected exam: "+path); errors++; continue;
+                    }
+                    EditorSceneManager.OpenScene(path,OpenSceneMode.Single);
+                    TrialGameplayRuntime trial=UnityEngine.Object.FindFirstObjectByType<TrialGameplayRuntime>();
+                    var car=UnityEngine.Object.FindObjectsByType<CarDriveController>(FindObjectsSortMode.None);
+                    var bikes=UnityEngine.Object.FindObjectsByType<TwoWheelerRigidbodyController>(FindObjectsSortMode.None);
+                    int total=car.Length+bikes.Length;
+                    if(trial==null || total!=1 ||
+                        (vehicle==TrialCatalog.StarterCar ? car.Length!=1 : bikes.Length!=1))
+                    {
+                        Debug.LogError(path+": expected exactly one trial runtime and one correctly typed vehicle.");
+                        errors++;
+                        continue;
+                    }
+                    var serialized=new SerializedObject(trial);
+                    var stages=serialized.FindProperty("orderedStages");
+                    var expected=TrialCatalog.ConnectedExamStagesFor(vehicle);
+                    if(stages==null || stages.arraySize!=expected.Length)
+                    {
+                        Debug.LogError(path+": seven-stage trial order is missing."); errors++; continue;
+                    }
+                    for(int i=0;i<expected.Length;i++)
+                        if(stages.GetArrayElementAtIndex(i).stringValue!=expected[i])
+                        {
+                            Debug.LogError(path+": incorrect stage "+i); errors++;
+                        }
+                    if(UnityEngine.Object.FindFirstObjectByType<TrialBehaviorChecklist>()==null)
+                    {
+                        Debug.LogError(path+": behavioral assessment UI missing."); errors++;
+                    }
+                    foreach(MonoBehaviour script in UnityEngine.Object.FindObjectsByType<MonoBehaviour>(
+                        FindObjectsSortMode.None))
+                    {
+                        if(script==null)continue;
+                        SerializedProperty p=new SerializedObject(script).FindProperty("trial");
+                        if(p==null)continue;
+                        if(p.objectReferenceValue != trial)
+                        {
+                            Debug.LogError(path+": "+script.GetType().Name+" has missing/wrong exam link.");
+                            errors++;
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(previous) && File.Exists(previous))
+                    EditorSceneManager.OpenScene(previous,OpenSceneMode.Single);
+                else
+                    EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects,NewSceneMode.Single);
+            }
+            if(errors==0)Debug.Log("Connected exam wiring audit passed for three scenes. "+
+                "Road driving, gate directions and marks STILL need PlayMode checks.");
+            else Debug.LogError("Connected exam audit found "+errors+" issue(s).");
+        }
+
         private static void Generate(string vehicle)
         {
             string name=TrialCatalog.ConnectedExamSceneFor(vehicle);
