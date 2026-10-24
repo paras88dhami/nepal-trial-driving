@@ -14,6 +14,7 @@ namespace NepalTrial.Trial
         [SerializeField] private string stageId = "garage";
         [SerializeField, Min(0.1f)] private float requiredStopSeconds = 2f;
         [SerializeField] private bool requireReverseApproach;
+        [SerializeField] private CarLBackPathSensor pathSensor;
         private bool reversedInStage;
         private bool drivingCorrectionActive;
         private BoxCollider region;
@@ -70,6 +71,9 @@ namespace NepalTrial.Trial
                 }
                 if (!reversedInStage || trial.State != ExamStage.Running) return;
             }
+            // Final parking alone is insufficient for a connected L-back.
+            // The vehicle must first cross the approach and reverse legs.
+            if (pathSensor!=null && !pathSensor.CanComplete)return;
             bool inside = CarGarageGeometry.VehicleFullyInside(region, vehicleBody);
             CourseEvent result = validator.Sample(inside, false, car.SpeedKph / 3.6f, Time.fixedDeltaTime);
             if (result.Kind == CourseEventKind.Completed) trial.ReportStage(stageId);
