@@ -8,6 +8,11 @@ namespace NepalTrial.Trial
         [SerializeField] private TrialGameplayRuntime trial;
         [SerializeField] private TwoWheelerRigidbodyController vehicle;
         [SerializeField] private BoxCollider ridingRegion;
+        [SerializeField] private bool useHorseshoeBoundary;
+        [SerializeField] private Transform curveCenter;
+        [SerializeField, Min(1f)] private float innerTurnRadius=2.8f;
+        [SerializeField, Min(1f)] private float outerTurnRadius=5.2f;
+        [SerializeField] private float approachStartZ=-11f;
         [SerializeField] private string stageId = "u-turn";
         [SerializeField, Min(1f)] private float minTurnDegrees = 140f;
         [SerializeField, Min(1f)] private float maxSeconds = 35f;
@@ -47,7 +52,16 @@ namespace NepalTrial.Trial
             lastHeading=heading;
             netHeadingChange+=turn;
             bool outside=false;
-            if (ridingRegion != null)
+            if(useHorseshoeBoundary && curveCenter!=null)
+            {
+                Vector3 p=vehicle.transform.position;
+                outside=!UTurnHorseshoeMath.IsInside(
+                    new Vector2(p.x,p.z),
+                    new Vector2(curveCenter.position.x,curveCenter.position.z),
+                    innerTurnRadius,outerTurnRadius,
+                    curveCenter.position.z+approachStartZ,.08f);
+            }
+            else if (ridingRegion != null)
             {
                 Vector3 p=ridingRegion.transform.InverseTransformPoint(vehicle.transform.position)-ridingRegion.center;
                 Vector3 half=ridingRegion.size*.5f;
@@ -61,7 +75,7 @@ namespace NepalTrial.Trial
             {
                 if (!TwoWheelerIndicatorRules.HasCorrectTurnSignal(netHeadingChange,usedLeft,usedRight))
                     trial.ReportViolation("u-turn-no-indicator");
-                trial.ReportStage(stageId);
+                if(trial.State==ExamStage.Running)trial.ReportStage(stageId);
             }
             else trial.ReportViolation(result.Code);
         }
