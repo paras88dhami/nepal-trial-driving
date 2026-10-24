@@ -56,6 +56,10 @@ def main() -> int:
             assembly = json.loads(path.read_text(encoding="utf-8-sig"))
             if assembly.get("name") != expected:
                 errors.append(f"{path.relative_to(ROOT)}: unexpected assembly name")
+            if expected in ("NepalTrial.Runtime", "NepalTrial.Editor") and (
+                "Unity.ugui" not in assembly.get("references", [])
+            ):
+                errors.append(f"{path.relative_to(ROOT)}: missing required Unity.ugui reference")
         except (OSError, ValueError) as ex:
             errors.append(f"{path.relative_to(ROOT)}: invalid assembly JSON ({ex})")
 
