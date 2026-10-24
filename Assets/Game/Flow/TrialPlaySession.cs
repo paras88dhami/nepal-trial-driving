@@ -56,10 +56,13 @@ namespace NepalTrial.Flow
             {
                 // A failed stage stops the campaign. Success is only committed when moving on
                 // or finishing the last course, so restarting a stage cannot double-count.
-                if (!passed || session.stageIndex == session.courses.Length - 1)
+                bool aggregateStillPassing = session.completedPenaltyPoints +
+                    StartingScore - score <= StartingScore - PassingScore;
+                if (!passed || !aggregateStillPassing ||
+                    session.stageIndex == session.courses.Length - 1)
                 {
                     CommitPending(session);
-                    CompleteRun(session,passed);
+                    CompleteRun(session,passed && aggregateStillPassing);
                 }
             }
             else
