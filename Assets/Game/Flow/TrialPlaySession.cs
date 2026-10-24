@@ -9,6 +9,7 @@ namespace NepalTrial.Flow
     {
         public int schemaVersion = 1;
         public string vehicleId;
+        public string runId;
         public DriveMode mode;
         public string[] courses;
         public int stageIndex;
@@ -39,7 +40,8 @@ namespace NepalTrial.Flow
                 new[] { practiceCourse };
             if (mode != DriveMode.Exam && TrialCatalog.SceneFor(vehicleId, practiceCourse) == null)
                 throw new ArgumentException("Invalid practice course.", nameof(practiceCourse));
-            return new TrialPlaySession { vehicleId = vehicleId, mode = mode, courses = courses };
+            return new TrialPlaySession { vehicleId = vehicleId, mode = mode, courses = courses,
+                runId = Guid.NewGuid().ToString("N") };
         }
 
         /// <summary>Completing a stage is idempotent until advancing or restarting it.</summary>
@@ -57,7 +59,7 @@ namespace NepalTrial.Flow
                 if (!passed || session.stageIndex == session.courses.Length - 1)
                 {
                     CommitPending(session);
-                    CompleteRun(session);
+                    CompleteRun(session,passed);
                 }
             }
             else
@@ -94,11 +96,11 @@ namespace NepalTrial.Flow
             session.pendingStagePassed = false;
         }
 
-        private static void CompleteRun(TrialPlaySession session)
+        private static void CompleteRun(TrialPlaySession session,bool completedSuccessfully)
         {
             session.ended = true;
             session.finalScore = Math.Max(0,StartingScore-session.completedPenaltyPoints);
-            session.passed = session.finalScore >= PassingScore &&
+            session.passed = completedSuccessfully && session.finalScore >= PassingScore &&
                 session.stageIndex == session.courses.Length - 1;
         }
 
