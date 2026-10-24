@@ -36,6 +36,9 @@ namespace NepalTrial.Mobile
             if(!RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 transform as RectTransform,data.position,data.pressEventCamera,out Vector2 local))
                 return false;
+            // The installer anchors this RectTransform at its lower-left.
+            // Pointer angles must be measured relative to the visual center.
+            local-=(transform as RectTransform).rect.center;
             if(local.sqrMagnitude<64f)return false;
             degrees=Mathf.Atan2(local.y,local.x)*Mathf.Rad2Deg;
             return true;
