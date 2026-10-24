@@ -5,7 +5,7 @@ namespace NepalTrial.Input
 {
     /// <summary>Hold controls release on pointer-up; one-shot controls trigger only on pointer-down.</summary>
     public sealed class MobileTwoWheelerTouchControl : MonoBehaviour,
-        IPointerDownHandler, IPointerUpHandler, IPointerCancelHandler
+        IPointerDownHandler, IPointerUpHandler
     {
         [SerializeField] private TwoWheelerInput input;
         [SerializeField] private TwoWheelerInput.Control control;
@@ -19,12 +19,6 @@ namespace NepalTrial.Input
         }
 
         public void OnPointerUp(PointerEventData data)
-        {
-            if (heldPointer != data.pointerId) return;
-            Clear();
-        }
-
-        public void OnPointerCancel(PointerEventData data)
         {
             if (heldPointer != data.pointerId) return;
             Clear();
