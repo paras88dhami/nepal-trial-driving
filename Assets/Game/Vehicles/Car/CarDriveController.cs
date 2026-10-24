@@ -18,9 +18,14 @@ namespace NepalTrial.Vehicles.Car
         [SerializeField, Range(5, 45)] private float maxSteerAngle = 30f;
         [SerializeField, Min(1)] private float topSpeedKph = 35f;
         [SerializeField, Min(0)] private float handbrakeTorque = 3500f;
+        [SerializeField, Range(0.1f, 1f)] private float highSpeedSteeringFraction = 0.45f;
+        [SerializeField, Min(1)] private float steeringReductionSpeedKph = 35f;
 
         private Rigidbody body;
         private CarInputCommand command;
+        private readonly TransmissionState transmission = new TransmissionState();
+        public DriveGear CurrentGear => transmission.Gear;
+        public bool HandbrakeEngaged => transmission.HandbrakeOn;
 
         public float SpeedKph => body != null ? body.linearVelocity.magnitude * 3.6f : 0f;
 
@@ -29,6 +34,9 @@ namespace NepalTrial.Vehicles.Car
             body = GetComponent<Rigidbody>();
             body.mass = 1050f;
             body.interpolation = RigidbodyInterpolation.Interpolate;
+            // Preserve prototype behaviour: begin in Drive with parking brake released.
+            transmission.TrySelect(DriveGear.Drive, 0f, true);
+            transmission.SetHandbrake(false);
             if (!WheelsReady())
                 Debug.LogError("Assign all four WheelColliders before driving.", this);
         }
@@ -42,22 +50,29 @@ namespace NepalTrial.Vehicles.Car
         {
             if (!WheelsReady()) return;
 
-            float steering = command.Steering * maxSteerAngle;
+            // Reverse is requested by the existing mobile/keyboard input; the interlock
+            // refuses a Drive/Reverse switch while moving.
+            DriveGear requested = command.Reverse ? DriveGear.Reverse : DriveGear.Drive;
+            if (transmission.Gear != requested)
+                transmission.TrySelect(requested, SpeedKph / 3.6f, command.Brake > 0.1f || SpeedKph < 0.72f);
+            transmission.SetHandbrake(command.Handbrake);
+
+            float steering = CarDriveMath.SteeringAngle(command.Steering, SpeedKph,
+                maxSteerAngle, highSpeedSteeringFraction, steeringReductionSpeedKph);
             frontLeft.steerAngle = steering;
             frontRight.steerAngle = steering;
 
-            float requestedTorque = SpeedKph < topSpeedKph
-                ? command.Throttle * motorTorque * (command.Reverse ? -1f : 1f)
-                : 0f;
-
+            float signedThrottle = transmission.SignedThrottle(command.Throttle);
+            float requestedTorque = CarDriveMath.DriveTorque(signedThrottle, SpeedKph,
+                topSpeedKph, command.Brake, transmission.HandbrakeOn) * motorTorque;
             rearLeft.motorTorque = requestedTorque * 0.5f;
             rearRight.motorTorque = requestedTorque * 0.5f;
 
-            float normalBrake = command.Brake * brakeTorque;
+            float normalBrake = CarDriveMath.BrakeTorque(command.Brake, brakeTorque);
             frontLeft.brakeTorque = normalBrake;
             frontRight.brakeTorque = normalBrake;
-            rearLeft.brakeTorque = normalBrake + (command.Handbrake ? handbrakeTorque : 0f);
-            rearRight.brakeTorque = normalBrake + (command.Handbrake ? handbrakeTorque : 0f);
+            rearLeft.brakeTorque = normalBrake + (transmission.HandbrakeOn ? handbrakeTorque : 0f);
+            rearRight.brakeTorque = normalBrake + (transmission.HandbrakeOn ? handbrakeTorque : 0f);
         }
 
         private void OnDisable()
