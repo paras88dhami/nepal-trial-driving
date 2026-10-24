@@ -28,6 +28,7 @@ namespace NepalTrial.EditorTools
         {
             Directory.CreateDirectory(SceneFolder);
             Directory.CreateDirectory(MaterialFolder);
+            AssetDatabase.Refresh();
             PrepareMaterials();
             int created = 0;
             foreach (string id in new[] { "figure-eight", "u-turn", "hill-start",
@@ -373,13 +374,22 @@ namespace NepalTrial.EditorTools
 
         private static void CreateUTurn(TrialGameplayRuntime trial,CarDriveController car)
         {
-            Block("UTurnArea",new Vector3(0,.035f,6),new Vector3(17f,.07f,25f),road,false);
-            Block("LeftMark",new Vector3(-8.5f,.08f,5),new Vector3(.17f,.06f,23f),yellow,false);
-            Block("RightMark",new Vector3(8.5f,.08f,5),new Vector3(.17f,.06f,23f),yellow,false);
+            Block("UTurnArea",new Vector3(0,.035f,4),new Vector3(18f,.07f,34f),road,false);
+            Block("LeftMark",new Vector3(-9f,.08f,4),new Vector3(.17f,.06f,34f),yellow,false);
+            Block("RightMark",new Vector3(9f,.08f,4),new Vector3(.17f,.06f,34f),yellow,false);
+            var regionObject = new GameObject("UTurnDrivingRegion");
+            regionObject.transform.position = new Vector3(0,1.4f,4f);
+            var region = regionObject.AddComponent<BoxCollider>();
+            region.isTrigger = true;
+            region.size = new Vector3(18f,4f,34f);
             var sensor=new GameObject("UTurnObserver").AddComponent<CarUTurnSensor>();
             Ref(sensor,"trial",trial); Ref(sensor,"car",car);
+            var boundary = new GameObject("UTurnBoundaryObserver").AddComponent<CarUTurnBoundarySensor>();
+            Ref(boundary,"trial",trial); Ref(boundary,"maneuver",sensor);
+            Ref(boundary,"drivingRegion",region);
+            Ref(boundary,"vehicleBody",car.GetComponent<BoxCollider>());
             ManeuverGate("BeginUTurn",new Vector3(0,1,-8),0,car,sensor,null);
-            ManeuverGate("ExitUTurn",new Vector3(0,1,-12),1,car,sensor,null);
+            ManeuverGate("ExitUTurn",new Vector3(0,1,-10),1,car,sensor,null);
         }
 
         private static void CreateHillStart(TrialGameplayRuntime trial,CarDriveController car)
