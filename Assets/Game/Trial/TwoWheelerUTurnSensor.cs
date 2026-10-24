@@ -12,13 +12,15 @@ namespace NepalTrial.Trial
         [SerializeField, Min(1f)] private float minTurnDegrees = 140f;
         [SerializeField, Min(1f)] private float maxSeconds = 35f;
         private UTurnValidator validator;
-        private bool running, exitRequested, usedIndicator;
+        private bool running, exitRequested, usedLeft, usedRight;
+        private float netHeadingChange;
         private float lastHeading;
         public bool IsRunning => running;
 
         private void OnEnable() { if (trial != null) trial.AttemptRestarted += ResetAttempt; }
         private void OnDisable() { if (trial != null) trial.AttemptRestarted -= ResetAttempt; }
-        public void ResetAttempt() { running=false; exitRequested=false; usedIndicator=false; validator=null; }
+        public void ResetAttempt() { running=false; exitRequested=false; usedLeft=usedRight=false;
+            netHeadingChange=0f; validator=null; }
 
         public void Begin()
         {
@@ -28,7 +30,8 @@ namespace NepalTrial.Trial
             validator.Begin();
             running=true;
             lastHeading=vehicle.transform.eulerAngles.y;
-            usedIndicator=false;
+            usedLeft=usedRight=false;
+            netHeadingChange=0f;
             exitRequested=false;
         }
         public void Exit() => exitRequested=true;
@@ -37,10 +40,12 @@ namespace NepalTrial.Trial
         {
             if (!running || trial == null || vehicle == null ||
                 trial.State != ExamStage.Running || trial.IsPaused || trial.CurrentStage != stageId) return;
-            usedIndicator |= vehicle.LeftIndicator || vehicle.RightIndicator;
+            usedLeft |= vehicle.LeftIndicator;
+            usedRight |= vehicle.RightIndicator;
             float heading=vehicle.transform.eulerAngles.y;
             float turn=Mathf.DeltaAngle(lastHeading,heading);
             lastHeading=heading;
+            netHeadingChange+=turn;
             bool outside=false;
             if (ridingRegion != null)
             {
@@ -54,7 +59,8 @@ namespace NepalTrial.Trial
             running=false;
             if (result.Kind == CourseEventKind.Completed)
             {
-                if (!usedIndicator) trial.ReportViolation("u-turn-no-indicator");
+                if (!TwoWheelerIndicatorRules.HasCorrectTurnSignal(netHeadingChange,usedLeft,usedRight))
+                    trial.ReportViolation("u-turn-no-indicator");
                 trial.ReportStage(stageId);
             }
             else trial.ReportViolation(result.Code);
