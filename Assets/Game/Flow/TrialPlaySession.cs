@@ -11,6 +11,8 @@ namespace NepalTrial.Flow
         public string vehicleId;
         public string runId;
         public bool connectedExam;
+        public float checkpointSeconds = 1200f;
+        public int checkpointViolations;
         public DriveMode mode;
         public string[] courses;
         public int stageIndex;
