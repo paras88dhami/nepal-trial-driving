@@ -280,6 +280,8 @@ namespace NepalTrial.EditorTools
                     RebuildCarRamp(stageRoot.transform);
                 if(twoWheeler && stages[stage]=="ramp")
                     RebuildBikeRamp(stageRoot.transform);
+                if(twoWheeler && stages[stage]=="narrow-plank")
+                    RebuildBikePlank(stageRoot.transform);
                 stageRoot.transform.position=new Vector3(0,0,stage*Spacing);
                 PlaceStageSign(stageRoot.transform,stages[stage],stage);
             }
@@ -306,20 +308,76 @@ namespace NepalTrial.EditorTools
         {
             TwoWheelerRampSensor ramp=stageRoot.GetComponentInChildren<TwoWheelerRampSensor>(true);
             if(ramp==null)throw new InvalidOperationException("Bike ramp sensor missing.");
-            GameObject zone=new GameObject("Ramp_BikeDownhillStopArea");
-            zone.transform.SetParent(stageRoot,false);
-            zone.transform.position=new Vector3(0,1.6f,16.8f);
-            var collider=zone.AddComponent<BoxCollider>();
-            collider.isTrigger=true;
-            collider.size=new Vector3(7f,4f,2.5f);
+
+            // Government training-ground drawing: 6m ascent + 3m plateau +
+            // 6m descent, overall 15m; top-view road width 3m.
+            SetBox(stageRoot,"AscendingRamp",new Vector3(0,.60f,0),
+                new Vector3(3f,.28f,6f),Quaternion.Euler(-9f,0,0));
+            SetBox(stageRoot,"RampCrest",new Vector3(0,1.10f,4.5f),
+                new Vector3(3f,.28f,3f),Quaternion.identity);
+            SetBox(stageRoot,"DescendingRamp",new Vector3(0,.60f,9f),
+                new Vector3(3f,.28f,6f),Quaternion.Euler(9f,0,0));
+
+            Transform uphill=stageRoot.Find("AscendingStopZone");
+            if(uphill==null)throw new InvalidOperationException("Missing bike ascending stop zone.");
+            uphill.position=new Vector3(0,1f,-.8f);
+            var upCollider=uphill.GetComponent<BoxCollider>();
+            upCollider.size=new Vector3(3f,3f,1.5f);
+
+            Transform crest=stageRoot.Find("DescentStart");
+            if(crest==null)throw new InvalidOperationException("Missing descent start.");
+            crest.position=new Vector3(0,1.1f,6.0f);
+            Transform begin=stageRoot.Find("BeginRamp");
+            Transform exit=stageRoot.Find("ExitRamp");
+            if(begin==null || exit==null)
+                throw new InvalidOperationException("Missing bike ramp entry/exit gates.");
+            begin.position=new Vector3(0,1,-4.0f);
+            exit.position=new Vector3(0,1,13.0f);
+
+            var stop=new GameObject("Ramp_BikeDownhillStopArea");
+            stop.transform.SetParent(stageRoot,false);
+            stop.transform.position=new Vector3(0,1f,10.4f);
+            var area=stop.AddComponent<BoxCollider>();
+            area.isTrigger=true;
+            area.size=new Vector3(3f,3f,1.5f);
             var serialized=new SerializedObject(ramp);
-            serialized.FindProperty("downhillStopZone").objectReferenceValue=collider;
+            serialized.FindProperty("downhillStopZone").objectReferenceValue=area;
             serialized.FindProperty("maxRollbackMeters").floatValue=.1524f;
             serialized.FindProperty("timeoutSeconds").floatValue=90f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
-            DrawStripe("Ramp_BikeDownhillStopStripe",new Vector3(0,.10f,16.8f),
-                new Vector3(7f,.04f,.15f),CreateMaterial(
+            DrawStripe("Ramp_BikeUpStopStripe",new Vector3(0,.08f,-.8f),
+                new Vector3(3f,.04f,.15f),CreateMaterial(
                     "ConnectedFigureEightLines",new Color(.96f,.8f,.10f)),stageRoot);
+            DrawStripe("Ramp_BikeDownhillStopStripe",new Vector3(0,.08f,10.4f),
+                new Vector3(3f,.04f,.15f),CreateMaterial(
+                    "ConnectedFigureEightLines",new Color(.96f,.8f,.10f)),stageRoot);
+        }
+
+        private static void SetBox(Transform root,string name,Vector3 position,
+            Vector3 scale,Quaternion rotation)
+        {
+            Transform child=root.Find(name);
+            if(child==null)throw new InvalidOperationException("Missing imported track: "+name);
+            child.position=position;
+            child.rotation=rotation;
+            child.localScale=scale;
+        }
+
+        private static void RebuildBikePlank(Transform stageRoot)
+        {
+            SetBox(stageRoot,"RaisedPlank",new Vector3(0,.08f,1.5f),
+                new Vector3(.5f,.15f,10f),Quaternion.identity);
+            Transform contact=stageRoot.Find("PlankContactArea");
+            if(contact==null)throw new InvalidOperationException("Missing narrow plank sensor.");
+            contact.position=new Vector3(0,1f,1.5f);
+            var box=contact.GetComponent<BoxCollider>();
+            box.size=new Vector3(.5f,3f,10f);
+            var sensor=contact.GetComponent<TwoWheelerPlankSensor>();
+            var so=new SerializedObject(sensor);
+            // The wheelbase means BOTH wheels occupy a 10m board for less than
+            // 10m of center travel. Require 7.5m with two-wheel contact sustained.
+            so.FindProperty("requiredDistanceMeters").floatValue=7.5f;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void RebuildCarRamp(Transform stageRoot)
