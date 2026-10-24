@@ -57,6 +57,7 @@ namespace NepalTrial.Trial
         private float wait;
         private bool started;
         private bool complete;
+        private bool descending;
         public HillStartValidator(float maxRollbackMeters, float maximumWaitSeconds)
         {
             if (maxRollbackMeters < 0 || maximumWaitSeconds <= 0) throw new ArgumentOutOfRangeException();
@@ -68,16 +69,20 @@ namespace NepalTrial.Trial
         {
             initialDistance = signedDistanceAlongHill;
             maximumDistance = signedDistanceAlongHill;
-            wait = 0; started = true; complete = false;
+            wait = 0; started = true; complete = false; descending=false;
         }
-        public CourseEvent Sample(float signedDistanceAlongHill, float deltaSeconds, bool reachedExit)
+        public CourseEvent Sample(float signedDistanceAlongHill, float deltaSeconds, bool reachedExit, bool descentStarted=false)
         {
             if (!started || complete) return new CourseEvent();
             if (deltaSeconds < 0) throw new ArgumentOutOfRangeException(nameof(deltaSeconds));
             wait += deltaSeconds;
-            maximumDistance = Mathf.Max(maximumDistance, signedDistanceAlongHill);
-            if (maximumDistance - signedDistanceAlongHill > maxRollbackMeters)
-            { complete = true; return new CourseEvent(CourseEventKind.Violation, "hill-rollback"); }
+            descending |= descentStarted;
+            if (!descending)
+            {
+                maximumDistance = Mathf.Max(maximumDistance, signedDistanceAlongHill);
+                if (maximumDistance - signedDistanceAlongHill > maxRollbackMeters)
+                { complete = true; return new CourseEvent(CourseEventKind.Violation, "hill-rollback"); }
+            }
             if (wait > maximumWaitSeconds)
             { complete = true; return new CourseEvent(CourseEventKind.Violation, "hill-timeout"); }
             if (reachedExit)
