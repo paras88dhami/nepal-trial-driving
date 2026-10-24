@@ -453,23 +453,30 @@ namespace NepalTrial.EditorTools
 
         private static void Ramp(TrialGameplayRuntime trial,TwoWheelerRigidbodyController ride)
         {
-            var ramp=Block("RampRoad",new Vector3(0,1.0f,1f),
-                new Vector3(7f,.28f,14f),road,true);
-            ramp.transform.rotation=Quaternion.Euler(-8f,0,0);
-            Block("TopLanding",new Vector3(0,1.95f,11.5f),
-                new Vector3(7f,.26f,8f),road,true);
-            var stopObj=new GameObject("StopZone");
-            stopObj.transform.position=new Vector3(0,1.4f,3f);
+            // Connected ascent, flat crest, and descent; test colliders and joins in PlayMode.
+            var ascent=Block("AscendingRamp",new Vector3(0,1f,-3f),
+                new Vector3(7f,.28f,12f),road,true);
+            ascent.transform.rotation=Quaternion.Euler(-9f,0,0);
+            Block("RampCrest",new Vector3(0,1.95f,5f),
+                new Vector3(7f,.28f,4f),road,true);
+            var descent=Block("DescendingRamp",new Vector3(0,1f,13f),
+                new Vector3(7f,.28f,12f),road,true);
+            descent.transform.rotation=Quaternion.Euler(9f,0,0);
+            var stopObj=new GameObject("AscendingStopZone");
+            stopObj.transform.position=new Vector3(0,1.5f,-2f);
             BoxCollider stop=stopObj.AddComponent<BoxCollider>();
             stop.isTrigger=true;
-            stop.size=new Vector3(7f,4f,3f);
+            stop.size=new Vector3(7f,4f,2f);
+            var descentMarker=new GameObject("DescentStart");
+            descentMarker.transform.position=new Vector3(0,1.9f,7f);
             var observer=new GameObject("RampObserver").AddComponent<TwoWheelerRampSensor>();
             observer.transform.forward=Vector3.forward;
             Ref(observer,"trial",trial);Ref(observer,"vehicle",ride);
             Ref(observer,"uphillDirection",observer.transform);Ref(observer,"stopZone",stop);
-            Maneuver("BeginRamp",new Vector3(0,1,-5f),2,trial,ride,null,observer);
-            Maneuver("ExitRamp",new Vector3(0,2.5f,11),3,trial,ride,null,observer);
-            LineAt(3f);
+            Ref(observer,"descentStart",descentMarker.transform);
+            Maneuver("BeginRamp",new Vector3(0,1,-8f),2,trial,ride,null,observer);
+            Maneuver("ExitRamp",new Vector3(0,1,20f),3,trial,ride,null,observer);
+            LineAt(-2f);
         }
 
         private static void Behavior(TrialGameplayRuntime trial,Transform canvas)
