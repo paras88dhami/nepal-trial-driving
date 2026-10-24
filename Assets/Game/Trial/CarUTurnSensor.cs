@@ -17,9 +17,13 @@ namespace NepalTrial.Trial
         private bool exitRequested;
         private float lastHeading;
 
+        private void OnEnable() { if (trial != null) trial.AttemptRestarted += ResetAttempt; }
+        private void OnDisable() { if (trial != null) trial.AttemptRestarted -= ResetAttempt; }
+        public void ResetAttempt() { running = false; exitRequested = false; validator = null; }
         public void Begin()
         {
-            if (car == null) return;
+            if (car == null || trial == null || trial.State != ExamStage.Running ||
+                trial.IsPaused || trial.CurrentStage != stageId) return;
             validator = new UTurnValidator(minimumTurnDegrees, maximumSeconds);
             validator.Begin();
             lastHeading = car.transform.eulerAngles.y;
@@ -33,7 +37,8 @@ namespace NepalTrial.Trial
 
         private void FixedUpdate()
         {
-            if (!running || car == null || trial == null || validator == null) return;
+            if (!running || car == null || trial == null || validator == null || trial.IsPaused ||
+                trial.State != ExamStage.Running || trial.CurrentStage != stageId) return;
             float nextHeading = car.transform.eulerAngles.y;
             float delta = Mathf.DeltaAngle(lastHeading, nextHeading);
             lastHeading = nextHeading;
