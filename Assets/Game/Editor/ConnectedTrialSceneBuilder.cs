@@ -26,7 +26,12 @@ namespace NepalTrial.EditorTools
         private const float Spacing=70f;
 
         [MenuItem("Nepal Trial/Connected Exam/Generate All Three Connected Grounds")]
-        public static void GenerateAll()
+        public static void GenerateAll() => GenerateBatch(false);
+
+        [MenuItem("Nepal Trial/Connected Exam/Rebuild Connected Grounds (Back Up Existing)")]
+        public static void RebuildAll() => GenerateBatch(true);
+
+        private static void GenerateBatch(bool overwrite)
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             string previous=SceneManager.GetActiveScene().path;
@@ -34,7 +39,7 @@ namespace NepalTrial.EditorTools
             try
             {
                 foreach(string vehicle in TrialCatalog.Vehicles)
-                    Generate(vehicle);
+                    Generate(vehicle,overwrite);
                 RegisterBuildScenes();
             }
             finally
@@ -116,14 +121,22 @@ namespace NepalTrial.EditorTools
             else Debug.LogError("Connected exam audit found "+errors+" issue(s).");
         }
 
-        private static void Generate(string vehicle)
+        private static void Generate(string vehicle,bool overwrite)
         {
             string name=TrialCatalog.ConnectedExamSceneFor(vehicle);
             string output=Folder+"/"+name+".unity";
-            if(File.Exists(output))
+            if(File.Exists(output) && !overwrite)
             {
                 Debug.LogWarning("Preserving existing connected exam scene: "+output);
                 return;
+            }
+            if(overwrite && File.Exists(output))
+            {
+                string backup=Path.Combine("Build","ConnectedSceneBackups",
+                    DateTime.UtcNow.ToString("yyyyMMdd_HHmmss_fff"),name+".unity");
+                Directory.CreateDirectory(Path.GetDirectoryName(backup));
+                File.Copy(output,backup,true);
+                Debug.Log("Saved previous connected scene backup: "+backup);
             }
 
             string[] stages=TrialCatalog.ConnectedExamStagesFor(vehicle);
@@ -244,7 +257,17 @@ namespace NepalTrial.EditorTools
                     }
                 }
 
-                if(stage==0) RebuildOfficialEight(stageRoot.transform,twoWheeler);
+                if(stage==0)
+                {
+                    RebuildOfficialEight(stageRoot.transform,twoWheeler);
+                    Vector3 spawn=twoWheeler
+                        ? new Vector3(-2.25f,1.05f,-2.5f)
+                        : new Vector3(-4.5f,1.15f,-4.5f);
+                    var root=twoWheeler ? sharedBike.transform : sharedCar.transform;
+                    root.SetPositionAndRotation(spawn,Quaternion.Euler(0,90,0));
+                }
+                if(!twoWheeler && stages[stage]=="garage")
+                    RebuildCarLBack(stageRoot.transform,sharedTrial,sharedCar);
                 stageRoot.transform.position=new Vector3(0,0,stage*Spacing);
                 PlaceStageSign(stageRoot.transform,stages[stage],stage);
             }
@@ -265,6 +288,90 @@ namespace NepalTrial.EditorTools
                 throw new IOException("Unity failed to save "+output);
             Debug.Log("Generated "+output+" with one vehicle and seven ordered trial stages. "+
                 "Road links and trigger placement MUST be checked in PlayMode.");
+        }
+
+        private static void RebuildCarLBack(Transform stageRoot,
+            TrialGameplayRuntime trial,CarDriveController car)
+        {
+            // L-shaped driving surface: longitudinal entrance, perpendicular
+            // reverse leg, final bay. Geometry is a prototype and must be
+            // measured and driven in the Unity Editor before release.
+            var sensor=stageRoot.GetComponentInChildren<CarGarageParkingSensor>(true);
+            if(sensor==null)throw new InvalidOperationException("Garage parking sensor missing.");
+            foreach(Transform t in stageRoot.GetComponentsInChildren<Transform>(true))
+            {
+                if(t==null || t==stageRoot)continue;
+                if(t.name=="GarageLeftWall" || t.name=="GarageRightWall" ||
+                   t.name=="GarageBackWall" || t.name=="ParkingFloor")
+                    UnityEngine.Object.DestroyImmediate(t.gameObject);
+            }
+            var parking=sensor.GetComponent<BoxCollider>();
+            sensor.transform.position=new Vector3(-12f,1.25f,10f);
+            parking.size=new Vector3(6f,3.5f,7.5f);
+            var approachObj=new GameObject("LBack_ApproachLeg");
+            approachObj.transform.SetParent(stageRoot,false);
+            approachObj.transform.position=new Vector3(0,1f,-7f);
+            var approach=approachObj.AddComponent<BoxCollider>();
+            approach.isTrigger=true;
+            approach.size=new Vector3(8f,3f,38f);
+            var reverseObj=new GameObject("LBack_ReverseLeg");
+            reverseObj.transform.SetParent(stageRoot,false);
+            reverseObj.transform.position=new Vector3(-8f,1f,10f);
+            var reverse=reverseObj.AddComponent<BoxCollider>();
+            reverse.isTrigger=true;
+            reverse.size=new Vector3(23f,3f,8f);
+            var path=stageRoot.gameObject.AddComponent<CarLBackPathSensor>();
+            var ps=new SerializedObject(path);
+            ps.FindProperty("trial").objectReferenceValue=trial;
+            ps.FindProperty("car").objectReferenceValue=car;
+            ps.FindProperty("approachLeg").objectReferenceValue=approach;
+            ps.FindProperty("reverseLeg").objectReferenceValue=reverse;
+            var wheels=ps.FindProperty("wheels");
+            var allWheels=car.GetComponentsInChildren<WheelCollider>();
+            wheels.arraySize=allWheels.Length;
+            for(int i=0;i<allWheels.Length;i++)
+                wheels.GetArrayElementAtIndex(i).objectReferenceValue=allWheels[i];
+            ps.ApplyModifiedPropertiesWithoutUndo();
+            var garage=new SerializedObject(sensor);
+            garage.FindProperty("pathSensor").objectReferenceValue=path;
+            garage.FindProperty("requireReverseApproach").boolValue=false;
+            garage.ApplyModifiedPropertiesWithoutUndo();
+            Material asphalt=CreateMaterial("LBackRoad",new Color(.22f,.24f,.26f));
+            Material marking=CreateMaterial("LBackBoundary",new Color(.94f,.88f,.12f));
+            DrawRectangle("LBackEntrance",new Vector3(0,.055f,-7),
+                new Vector2(8,38),asphalt,stageRoot);
+            DrawRectangle("LBackCrossLeg",new Vector3(-8,.06f,10),
+                new Vector2(23,8),asphalt,stageRoot);
+            DrawRectangle("LBackParkingBay",new Vector3(-12,.075f,10),
+                new Vector2(6,7.5f),CreateMaterial("LBackBay",new Color(.14f,.42f,.30f)),stageRoot);
+            DrawStripe("ApproachLeft",new Vector3(-4,.11f,-7),new Vector3(.13f,.04f,38),marking,stageRoot);
+            DrawStripe("ApproachRight",new Vector3(4,.11f,-7),new Vector3(.13f,.04f,38),marking,stageRoot);
+            DrawStripe("CrossLegBottom",new Vector3(-8,.11f,6),new Vector3(23,.04f,.13f),marking,stageRoot);
+            DrawStripe("CrossLegTop",new Vector3(-8,.11f,14),new Vector3(23,.04f,.13f),marking,stageRoot);
+        }
+
+        private static void DrawRectangle(string name,Vector3 position,Vector2 size,
+            Material material,Transform parent)
+        {
+            var o=GameObject.CreatePrimitive(PrimitiveType.Cube);
+            o.name=name;
+            o.transform.position=position;
+            o.transform.localScale=new Vector3(size.x,.06f,size.y);
+            o.GetComponent<Collider>().enabled=false;
+            o.GetComponent<Renderer>().sharedMaterial=material;
+            o.transform.SetParent(parent,true);
+        }
+
+        private static void DrawStripe(string name,Vector3 position,Vector3 size,
+            Material material,Transform parent)
+        {
+            var o=GameObject.CreatePrimitive(PrimitiveType.Cube);
+            o.name=name;
+            o.transform.position=position;
+            o.transform.localScale=size;
+            o.GetComponent<Collider>().enabled=false;
+            o.GetComponent<Renderer>().sharedMaterial=material;
+            o.transform.SetParent(parent,true);
         }
 
         private static void RebuildOfficialEight(Transform stageRoot,bool bike)
