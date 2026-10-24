@@ -112,13 +112,22 @@ namespace NepalTrial.Flow
             if (Current == null) return;
             if (Current.ended)
             {
-                // A finished run is already recorded; restart creates a brand-new run.
+                // A finished exam restarts at its first stage, never at the scene
+                // where the old exam happened to end.
                 var old = Current;
                 current = TrialSessionRules.Create(old.vehicleId,old.mode,
                     old.mode == DriveMode.Exam ? null : old.CurrentCourse);
+                Save();
+                string first = TrialCatalog.SceneFor(current.vehicleId,current.CurrentCourse);
+                if (Application.CanStreamedLevelBeLoaded(first) &&
+                    SceneManager.GetActiveScene().name != first)
+                    SceneManager.LoadScene(first);
             }
-            else TrialSessionRules.RestartStage(Current);
-            Save();
+            else
+            {
+                TrialSessionRules.RestartStage(Current);
+                Save();
+            }
         }
 
         public static void ReturnMenu()
