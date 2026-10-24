@@ -282,6 +282,8 @@ namespace NepalTrial.EditorTools
                     RebuildBikeRamp(stageRoot.transform);
                 if(twoWheeler && stages[stage]=="narrow-plank")
                     RebuildBikePlank(stageRoot.transform);
+                if(twoWheeler && stages[stage]=="u-turn")
+                    RebuildBikeUTurn(stageRoot.transform);
                 if(stages[stage]=="speed-breaker")
                     RebuildBumps(stageRoot.transform,twoWheeler);
                 stageRoot.transform.position=new Vector3(0,0,stage*Spacing);
@@ -304,6 +306,74 @@ namespace NepalTrial.EditorTools
                 throw new IOException("Unity failed to save "+output);
             Debug.Log("Generated "+output+" with one vehicle and seven ordered trial stages. "+
                 "Road links and trigger placement MUST be checked in PlayMode.");
+        }
+
+        private static void RebuildBikeUTurn(Transform stageRoot)
+        {
+            // Published 10.4m outside span and 5.6m inner diameter:
+            // two straight legs meet a 180-degree semicircle at z=8m.
+            var sensor=stageRoot.GetComponentInChildren<TwoWheelerUTurnSensor>(true);
+            if(sensor==null)throw new InvalidOperationException("Missing bike U-turn observer.");
+            Transform region=stageRoot.Find("UTurnRideArea");
+            Transform road=stageRoot.Find("UTurnLane");
+            if(region==null || road==null)
+                throw new InvalidOperationException("Missing imported bike U-turn track.");
+            road.position=new Vector3(0,.04f,1f);
+            road.localScale=new Vector3(10.4f,.07f,25f);
+            region.position=new Vector3(0,1f,1f);
+            region.GetComponent<BoxCollider>().size=new Vector3(10.4f,4f,25f);
+
+            foreach(Transform child in stageRoot.GetComponentsInChildren<Transform>(true))
+            {
+                if(child!=null && (child.name=="LeftBoundary" || child.name=="RightBoundary"))
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
+            }
+            var center=new GameObject("Uturn_CurveCenter");
+            center.transform.SetParent(stageRoot,false);
+            center.transform.position=new Vector3(0,.08f,8f);
+
+            Transform begin=stageRoot.Find("BeginUTurn");
+            Transform exit=stageRoot.Find("ExitUTurn");
+            if(begin==null || exit==null)
+                throw new InvalidOperationException("Missing bike U-turn entry/exit gates.");
+            begin.position=new Vector3(-4f,1f,-9f);
+            exit.position=new Vector3(4f,1f,-9f);
+            begin.GetComponent<BoxCollider>().size=new Vector3(2.2f,4f,.8f);
+            exit.GetComponent<BoxCollider>().size=new Vector3(2.2f,4f,.8f);
+
+            Material lines=CreateMaterial("ConnectedFigureEightLines",
+                new Color(.96f,.8f,.10f));
+            foreach(float r in new[] {2.8f,5.2f})
+            {
+                for(int i=0;i<48;i++)
+                {
+                    float a=i*Mathf.PI/48f;
+                    float b=(i+1)*Mathf.PI/48f;
+                    Vector3 p=new Vector3(r*Mathf.Cos(a),.13f,8f+r*Mathf.Sin(a));
+                    Vector3 q=new Vector3(r*Mathf.Cos(b),.13f,8f+r*Mathf.Sin(b));
+                    GameObject arc=GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    arc.name="Uturn_Arc_"+r;
+                    arc.transform.SetParent(stageRoot,false);
+                    arc.transform.position=(p+q)*.5f;
+                    arc.transform.rotation=Quaternion.LookRotation(q-p);
+                    arc.transform.localScale=new Vector3(.15f,.04f,Vector3.Distance(p,q));
+                    arc.GetComponent<Collider>().enabled=false;
+                    arc.GetComponent<Renderer>().sharedMaterial=lines;
+                }
+                foreach(float side in new[] {-1f,1f})
+                    DrawStripe("Uturn_StraightLine",
+                        new Vector3(side*r,.13f,-1.5f),
+                        new Vector3(.15f,.04f,19f),lines,stageRoot);
+            }
+
+            var so=new SerializedObject(sensor);
+            so.FindProperty("useHorseshoeBoundary").boolValue=true;
+            so.FindProperty("curveCenter").objectReferenceValue=center.transform;
+            so.FindProperty("innerTurnRadius").floatValue=2.8f;
+            so.FindProperty("outerTurnRadius").floatValue=5.2f;
+            so.FindProperty("approachStartZ").floatValue=-19f;
+            so.FindProperty("maxSeconds").floatValue=90f;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void RebuildBumps(Transform stageRoot,bool twoWheeler)
