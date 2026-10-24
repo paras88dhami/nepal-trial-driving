@@ -21,6 +21,8 @@ namespace NepalTrial.Trial
         [SerializeField, Min(.2f)] private float gateHalfWidth = 2.5f;
         private OrderedDrivingGateTracker gates;
         private BoundaryIncidentCounter incidents = new BoundaryIncidentCounter();
+        private FigureEightContactMonitor lineMonitor;
+        private bool reverseReported;
         private bool previousKnown;
         private bool finished;
         private Vector3 lastPosition;
@@ -46,6 +48,7 @@ namespace NepalTrial.Trial
                 directions[i] = orderedGates[i].forward;
             }
             gates = new OrderedDrivingGateTracker(positions, directions, gateHalfWidth);
+            lineMonitor = new FigureEightContactMonitor(ringRadius,trackHalfWidth);
         }
 
         private void OnEnable()
@@ -62,6 +65,8 @@ namespace NepalTrial.Trial
         {
             if (gates != null) gates.Reset();
             incidents.Reset();
+            if(lineMonitor!=null)lineMonitor.Reset();
+            reverseReported=false;
             previousKnown = false;
             finished = false;
         }
@@ -84,23 +89,32 @@ namespace NepalTrial.Trial
             lastPosition = position;
             previousKnown = true;
 
-            if (wheels == null || wheels.Length == 0 || gates.NextIndex == 0) return;
-            bool anyOutside = false;
-            for (int i = 0; i < wheels.Length; i++)
+            if (gates.NextIndex > 0 && car.CurrentGear == DriveGear.Reverse &&
+                car.SpeedKph > .2f && !reverseReported)
             {
-                WheelCollider wheel = wheels[i];
-                if (wheel == null) continue;
-                Vector3 contact;
-                WheelHit hit;
-                if (wheel.GetGroundHit(out hit)) contact = hit.point;
-                else contact = wheel.transform.position - wheel.transform.up * wheel.radius;
-                Vector2 p = new Vector2(contact.x, contact.z);
-                if (!FigureEightTrackMath.IsWithinAnnulus(p, leftCenter, ringRadius, trackHalfWidth)
-                    && !FigureEightTrackMath.IsWithinAnnulus(p, rightCenter, ringRadius, trackHalfWidth))
-                    anyOutside = true;
+                reverseReported=true;
+                trial.ReportViolation("figure-eight-reverse");
             }
-            if (incidents.Update(anyOutside))
+
+            if(wheels==null || wheels.Length==0 || gates.NextIndex==0 || lineMonitor==null)return;
+            var hits=new System.Collections.Generic.List<Vector2>();
+            foreach(var wheel in wheels)
+            {
+                if(wheel==null)continue;
+                WheelHit hit;
+                Vector3 p=wheel.GetGroundHit(out hit)?hit.point:
+                    wheel.transform.position-wheel.transform.up*wheel.radius;
+                hits.Add(new Vector2(p.x,p.z));
+            }
+            var contact=lineMonitor.Sample(hits.ToArray(),leftCenter,rightCenter);
+            if(contact==FigureEightContactEvent.Outside)
+            {
+                incidents.Update(true);
                 trial.ReportViolation("figure-eight-boundary");
+            }
+            else if(contact==FigureEightContactEvent.LineTouch)
+                trial.ReportViolation("figure-eight-line-touch");
+            else incidents.Update(false);
         }
     }
 }
