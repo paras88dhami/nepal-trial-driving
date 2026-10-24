@@ -474,9 +474,9 @@ namespace NepalTrial.EditorTools
         private static void RebuildCarLBack(Transform stageRoot,
             TrialGameplayRuntime trial,CarDriveController car)
         {
-            // L-shaped driving surface: longitudinal entrance, perpendicular
-            // reverse leg, final bay. Geometry is a prototype and must be
-            // measured and driven in the Unity Editor before release.
+            // Government 2074 small-car training layout: main lane 20m x 3m,
+            // garage leg 8.5m x 3m; the 1.5m rounded joint still needs a
+            // curved collider/mesh and actual steering-wheelbase tuning.
             var sensor=stageRoot.GetComponentInChildren<CarGarageParkingSensor>(true);
             if(sensor==null)throw new InvalidOperationException("Garage parking sensor missing.");
             foreach(Transform t in stageRoot.GetComponentsInChildren<Transform>(true))
@@ -487,20 +487,20 @@ namespace NepalTrial.EditorTools
                     UnityEngine.Object.DestroyImmediate(t.gameObject);
             }
             var parking=sensor.GetComponent<BoxCollider>();
-            sensor.transform.position=new Vector3(-12f,1.25f,10f);
-            parking.size=new Vector3(6f,3.5f,7.5f);
+            sensor.transform.position=new Vector3(-6.8f,1.25f,0f);
+            parking.size=new Vector3(4.8f,3.5f,3f);
             var approachObj=new GameObject("LBack_ApproachLeg");
             approachObj.transform.SetParent(stageRoot,false);
-            approachObj.transform.position=new Vector3(0,1f,-7f);
+            approachObj.transform.position=new Vector3(0,1f,-9f);
             var approach=approachObj.AddComponent<BoxCollider>();
             approach.isTrigger=true;
-            approach.size=new Vector3(8f,3f,38f);
+            approach.size=new Vector3(3f,3f,20f);
             var reverseObj=new GameObject("LBack_ReverseLeg");
             reverseObj.transform.SetParent(stageRoot,false);
-            reverseObj.transform.position=new Vector3(-8f,1f,10f);
+            reverseObj.transform.position=new Vector3(-4.25f,1f,0f);
             var reverse=reverseObj.AddComponent<BoxCollider>();
             reverse.isTrigger=true;
-            reverse.size=new Vector3(23f,3f,8f);
+            reverse.size=new Vector3(8.5f,3f,3f);
             var path=stageRoot.gameObject.AddComponent<CarLBackPathSensor>();
             var ps=new SerializedObject(path);
             ps.FindProperty("trial").objectReferenceValue=trial;
@@ -519,16 +519,16 @@ namespace NepalTrial.EditorTools
             garage.ApplyModifiedPropertiesWithoutUndo();
             Material asphalt=CreateMaterial("LBackRoad",new Color(.22f,.24f,.26f));
             Material marking=CreateMaterial("LBackBoundary",new Color(.94f,.88f,.12f));
-            DrawRectangle("LBackEntrance",new Vector3(0,.055f,-7),
-                new Vector2(8,38),asphalt,stageRoot);
-            DrawRectangle("LBackCrossLeg",new Vector3(-8,.06f,10),
-                new Vector2(23,8),asphalt,stageRoot);
-            DrawRectangle("LBackParkingBay",new Vector3(-12,.075f,10),
-                new Vector2(6,7.5f),CreateMaterial("LBackBay",new Color(.14f,.42f,.30f)),stageRoot);
-            DrawStripe("ApproachLeft",new Vector3(-4,.11f,-7),new Vector3(.13f,.04f,38),marking,stageRoot);
-            DrawStripe("ApproachRight",new Vector3(4,.11f,-7),new Vector3(.13f,.04f,38),marking,stageRoot);
-            DrawStripe("CrossLegBottom",new Vector3(-8,.11f,6),new Vector3(23,.04f,.13f),marking,stageRoot);
-            DrawStripe("CrossLegTop",new Vector3(-8,.11f,14),new Vector3(23,.04f,.13f),marking,stageRoot);
+            DrawRectangle("LBackEntrance",new Vector3(0,.055f,-9),
+                new Vector2(3,20),asphalt,stageRoot);
+            DrawRectangle("LBackCrossLeg",new Vector3(-4.25f,.06f,0),
+                new Vector2(8.5f,3),asphalt,stageRoot);
+            DrawRectangle("LBackParkingBay",new Vector3(-6.8f,.075f,0),
+                new Vector2(4.8f,3),CreateMaterial("LBackBay",new Color(.14f,.42f,.30f)),stageRoot);
+            DrawStripe("ApproachLeft",new Vector3(-1.5f,.11f,-9),new Vector3(.13f,.04f,20),marking,stageRoot);
+            DrawStripe("ApproachRight",new Vector3(1.5f,.11f,-9),new Vector3(.13f,.04f,20),marking,stageRoot);
+            DrawStripe("CrossLegBottom",new Vector3(-4.25f,.11f,-1.5f),new Vector3(8.5f,.04f,.13f),marking,stageRoot);
+            DrawStripe("CrossLegTop",new Vector3(-4.25f,.11f,1.5f),new Vector3(8.5f,.04f,.13f),marking,stageRoot);
         }
 
         private static void DrawRectangle(string name,Vector3 position,Vector2 size,
