@@ -83,9 +83,14 @@ namespace NepalTrial.Flow
             }
             if (Current.connectedExam)
             {
-                error = "Connected exam checkpoint recovery is not implemented yet. " +
-                    "Use Reset unfinished session before starting a new exam.";
-                return false;
+                string exam=TrialCatalog.ConnectedExamSceneFor(Current.vehicleId);
+                if (!Application.CanStreamedLevelBeLoaded(exam))
+                {
+                    error="Connected exam missing from Build Settings: "+exam;
+                    return false;
+                }
+                SceneManager.LoadScene(exam);
+                return true;
             }
             // If a stage finished before leaving the game, resume the next stage rather
             // than restarting the completed stage and risking duplicate score submission.
@@ -100,6 +105,26 @@ namespace NepalTrial.Flow
             }
             if (pendingNext && TrialSessionRules.Advance(Current)) Save();
             SceneManager.LoadScene(next);
+            return true;
+        }
+
+        /// <summary>
+        /// Persist only after a stage has completed. If the application closes
+        /// mid-stage, the next launch starts that same stage with the last
+        /// completed stage's marks, rather than saving partial violations.
+        /// </summary>
+        public static bool RecordConnectedCheckpoint(string completedStage,int score,
+            int violations,float remainingSeconds)
+        {
+            if(Current==null || !Current.connectedExam || Current.ended ||
+                score<TrialSessionRules.PassingScore || remainingSeconds<=0f ||
+                violations<0 || Current.stageIndex>=Current.courses.Length-1 ||
+                Current.courses[Current.stageIndex]!=completedStage)return false;
+            Current.stageIndex++;
+            Current.completedPenaltyPoints=100-score;
+            Current.checkpointViolations=violations;
+            Current.checkpointSeconds=remainingSeconds;
+            Save();
             return true;
         }
 
@@ -153,6 +178,11 @@ namespace NepalTrial.Flow
                 if (Application.CanStreamedLevelBeLoaded(first) &&
                     SceneManager.GetActiveScene().name != first)
                     SceneManager.LoadScene(first);
+            }
+            else if(Current.connectedExam)
+            {
+                current=TrialSessionRules.CreateConnectedExam(Current.vehicleId);
+                Save();
             }
             else
             {
