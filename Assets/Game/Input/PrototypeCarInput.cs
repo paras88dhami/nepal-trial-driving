@@ -13,6 +13,8 @@ namespace NepalTrial.Input
         [SerializeField] private CarDriveController car;
         private bool left, right, gas, stop, handbrake, reverse, clutch;
         private bool mobileMode;
+        private float analogSteer;
+        private bool analogSteerActive;
         private float steeringSensitivity = 1f;
         private void Awake() => steeringSensitivity = new LocalSettingsStore().Load().steeringSensitivity;
         private bool keyboardHandbrake;
@@ -50,11 +52,32 @@ namespace NepalTrial.Input
         public void ResetCar()
         {
             reverse = false;
+            analogSteer=0f;
+            analogSteerActive=false;
             selectedGear = DriveGear.Drive;
             left = right = gas = stop = handbrake = clutch = keyboardHandbrake = false;
             if (car != null) car.ResetVehicle();
         }
-        public void SetSteering(float value) { left = value < -0.01f; right = value > 0.01f; mobileMode = true; }
+        // Steering-wheel UI uses continuous -1..1 input; existing left/right
+        // buttons and keyboard controls remain supported without changes.
+        public void SetAnalogSteering(float value)
+        {
+            analogSteer=Mathf.Clamp(value,-1f,1f);
+            analogSteerActive=true;
+            mobileMode=true;
+        }
+        public void ReleaseAnalogSteering()
+        {
+            analogSteer=0f;
+            analogSteerActive=false;
+        }
+        public void SetSteering(float value)
+        {
+            analogSteerActive=false;
+            left=value<-.01f;
+            right=value>.01f;
+            mobileMode=true;
+        }
         public void SetThrottle(float value) { gas = value > 0.01f; mobileMode = true; }
         public void SetBrake(float value) { stop = value > 0.01f; mobileMode = true; }
         public void SetHandbrake(bool value) { handbrake = value; mobileMode = true; }
@@ -64,6 +87,7 @@ namespace NepalTrial.Input
 
         public void UseKeyboard()
         {
+            ReleaseAnalogSteering();
             mobileMode = false;
             selectedGear = DriveGear.Drive;
             keyboardHandbrake = false;
@@ -72,6 +96,7 @@ namespace NepalTrial.Input
 
         private void OnDisable()
         {
+            ReleaseAnalogSteering();
             left = right = gas = stop = handbrake = reverse = clutch = keyboardHandbrake = false;
             selectedGear = DriveGear.Drive;
             if (car != null) car.SetCommand(default);
@@ -79,7 +104,8 @@ namespace NepalTrial.Input
 
         private void Update()
         {
-            float steer = (right ? 1f : 0f) - (left ? 1f : 0f);
+            float steer = analogSteerActive ? analogSteer :
+                (right ? 1f : 0f) - (left ? 1f : 0f);
             float throttle = gas ? 1f : 0f;
             float brake = stop ? 1f : 0f;
             bool park = handbrake;
