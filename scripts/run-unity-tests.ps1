@@ -20,13 +20,20 @@ foreach ($platform in $platforms) {
     $report = Join-Path $out ("TestResults_" + $platform + ".xml")
     $log = Join-Path $out ("Unity_" + $platform + ".log")
     Remove-Item $report -ErrorAction SilentlyContinue
-    $cliArgs = @("-batchmode", "-nographics", "-quit",
-        "-projectPath", $projectPath, "-runTests", "-testPlatform", $platform,
-        "-testResults", $report, "-logFile", $log)
-    & $UnityExe @cliArgs
-    $exitCode = $LASTEXITCODE
+    # Unity.exe is a Windows GUI process. Invoking it with & from Windows
+    # PowerShell may return before it exits, leaving $LASTEXITCODE empty and
+    # falsely reporting that Unity did not generate the test report.
+    # Explicit quotes are required for paths with spaces in -ArgumentList.
+    $argsLine = '-batchmode -nographics -quit -projectPath "{0}" -runTests -testPlatform {1} -testResults "{2}" -logFile "{3}"' -f $projectPath, $platform, $report, $log
+    $unityProcess = Start-Process -FilePath $UnityExe -ArgumentList $argsLine -Wait -PassThru
+    $exitCode = $unityProcess.ExitCode
     if (-not (Test-Path $report)) {
-        throw "$platform test report missing (exit $exitCode). Open $log for compilation/license errors."
+        $recentLog = if (Test-Path -LiteralPath $log) {
+            (Get-Content -LiteralPath $log -Tail 40) -join [Environment]::NewLine
+        } else {
+            "Unity did not create the expected Editor log file."
+        }
+        throw "$platform test report missing (Unity exit $exitCode). Check $log`n$recentLog"
     }
     [xml]$xml = Get-Content -LiteralPath $report -Raw
     $root = $xml.DocumentElement
