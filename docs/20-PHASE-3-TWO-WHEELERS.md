@@ -14,7 +14,7 @@ This implementation uses **PROVISIONAL** geometry, arcade physics, score deducti
 2. Open Unity Hub, project `nepal-trial-driving`, Editor `6000.6.7f1`.
 3. Resolve package imports and check the **Console** for compile errors before proceeding.
 4. Choose **Nepal Trial → Phase 3 → Create Motorcycle and Scooter Trials**.
-5. Open a generated scene from `Assets/Scenes/BikeTrial_Motorcycle_figure-eight.unity` or `Assets/Scenes/BikeTrial_Scooter_narrow-plank.unity`. The full name uses lowercase `motorcycle` or `scooter`, for example `BikeTrial_motorcycle_ramp.unity`. (The menu creates 7 per type, 14 total.)
+5. Open a generated scene from `Assets/Scenes/BikeTrial_motorcycle_figure-eight.unity` or `Assets/Scenes/BikeTrial_scooter_narrow-plank.unity`. The full names always use lowercase `motorcycle` or `scooter`. (The menu creates 7 per type, 14 total.)
 6. Press **Play** and inspect wheel contact, motor torque, balance, HUD, penalty application, results, restarts and saved record.
 7. Run **Nepal Trial → Phase 3 → Audit Motorcycle and Scooter Trials** for a **static wiring audit**.
 8. Run **Window → General → Test Runner → EditMode → Run All**, then add actual PlayMode and Android touchscreen observations to the QA log.
