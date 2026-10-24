@@ -38,7 +38,19 @@ Updated 2026-10-24. Source of truth: Unity 6.6 URP project on `dev`.
 - PR #5 merged into `dev` at commit `653c395184f91d0207a7618b3286b1359c97323f` (unverified foundation).
 - Phase 1 implementation continues on `dev` at the user's request. Manual Unity testing still pending.
 
-## Phase statuses
-- Phase 1: IN PROGRESS — adding working controls, reset and tests.
-- Phases 2–4: PARTIALLY CODED — validators and game state foundations exist, full physical scene integration pending.
-- Phase 5: NOT RUN — Unity environment resides on the user's PC.
+## Phase statuses (2026-10-24)
+- Phase 1: IMPLEMENTATION IN PROGRESS — physical Drive/Reverse/Neutral/Park commands, Park brake on all wheels, hold/release handbrake, touchscreen and keyboard, vehicle reset, speed-adaptive steering, motor torque safety, gear indicator and NUnit cases on dev. Actual suspension tuning, physics validation and real asset wheel setup remain.
+- Phase 2: IMPLEMENTATION IN PROGRESS — live traffic-light, speed-breaker, rotated-box garage, U-turn, hill start and obstacle collision sensors added with garage geometry tests. Sensor references, actual track scenes, verified course geometry and scoring remain.
+- Phase 3: PARTIAL FOUNDATIONS — two-wheeler experimental Rigidbody and pure validators are merged; full tire contact, course scene and tuning remain.
+- Phase 4: PARTIAL FOUNDATIONS — game flow, exam coordinator and PlayerPrefs stores merged; actual menu/scene wiring, vehicle spawning and complete persistence flows remain.
+- Phase 5: NOT RUN — Unity 6.6 Test Framework 1.8.0 dependency added to manifest; automated and physical Android tests still must run in Unity.
+
+## Local validation steps (when ready)
+1. Back up or commit local changes. `git switch dev && git pull --ff-only origin dev` from `C:\\Users\\kapil\\nepal-trial-driving`.
+2. Open that folder in Unity Hub with editor `6000.6.7f1`; allow Package Manager to resolve `com.unity.test-framework` and update `Packages/packages-lock.json`.
+3. Open the existing prototype scene, click `Nepal Trial > Upgrade Current Car Controls` (not Create) and save. Check the Console for compile/asset errors first.
+4. Test keyboard W/S/A/D or arrows; R reverse, P park, N neutral, G drive, Space handbrake toggle, T vehicle reset, plus mobile touch controls. A shift may be pending until the car stops.
+5. Open `Window > General > Test Runner`, run EditMode tests and record the actual pass/fail report. Complete PlayMode physics and Android touchscreen tests on a device.
+6. Commit Unity-generated `.meta` and package lock changes only after inspecting them. Never copy `Library`, `Temp`, `Logs` into GitHub.
+
+**Do not mark any phase completed/verified on the strength of code commits alone.**
