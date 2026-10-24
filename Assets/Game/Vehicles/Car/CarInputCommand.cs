@@ -10,6 +10,8 @@ namespace NepalTrial.Vehicles.Car
         public float Brake;
         public bool Reverse;
         public bool Handbrake;
+        public bool HasRequestedGear;
+        public DriveGear RequestedGear;
 
         public CarInputCommand Clamped()
         {
@@ -19,7 +21,9 @@ namespace NepalTrial.Vehicles.Car
                 Throttle = Mathf.Clamp01(Throttle),
                 Brake = Mathf.Clamp01(Brake),
                 Reverse = Reverse,
-                Handbrake = Handbrake
+                Handbrake = Handbrake,
+                HasRequestedGear = HasRequestedGear,
+                RequestedGear = RequestedGear
             };
         }
     }
