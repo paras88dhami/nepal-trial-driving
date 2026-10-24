@@ -16,11 +16,17 @@ namespace NepalTrial.Trial
         private bool outside;
         private bool exitRequested;
         private float lastHeading;
+        private float signedTurn;
+        private bool signaledLeft, signaledRight;
         public bool IsRunning => running;
 
         private void OnEnable() { if (trial != null) trial.AttemptRestarted += ResetAttempt; }
         private void OnDisable() { if (trial != null) trial.AttemptRestarted -= ResetAttempt; }
-        public void ResetAttempt() { running = false; exitRequested = false; validator = null; }
+        public void ResetAttempt()
+        {
+            running=false; exitRequested=false; validator=null;
+            signedTurn=0f; signaledLeft=signaledRight=false;
+        }
         public void Begin()
         {
             if (running || car == null || trial == null || trial.State != ExamStage.Running ||
@@ -29,6 +35,8 @@ namespace NepalTrial.Trial
             validator.Begin();
             lastHeading = car.transform.eulerAngles.y;
             running = true;
+            signedTurn=0f;
+            signaledLeft=signaledRight=false;
             outside = false;
             exitRequested = false;
         }
@@ -43,11 +51,25 @@ namespace NepalTrial.Trial
             float nextHeading = car.transform.eulerAngles.y;
             float delta = Mathf.DeltaAngle(lastHeading, nextHeading);
             lastHeading = nextHeading;
+            signedTurn+=delta;
+            var indicator=car.GetComponent<CarTurnIndicators>();
+            if(indicator!=null)
+            {
+                signaledLeft |= indicator.Left;
+                signaledRight |= indicator.Right;
+            }
             CourseEvent result = validator.Sample(delta, Time.fixedDeltaTime, outside, exitRequested);
             exitRequested = false;
             if (result.Kind == CourseEventKind.None) return;
             running = false;
-            if (result.Kind == CourseEventKind.Completed) trial.ReportStage(stageId);
+            if (result.Kind == CourseEventKind.Completed)
+            {
+                if (!TwoWheelerIndicatorRules.HasCorrectTurnSignal(
+                    signedTurn,signaledLeft,signaledRight))
+                    trial.ReportViolation("u-turn-no-indicator");
+                if (trial.State == ExamStage.Running)
+                    trial.ReportStage(stageId);
+            }
             else trial.ReportViolation(result.Code);
         }
     }
