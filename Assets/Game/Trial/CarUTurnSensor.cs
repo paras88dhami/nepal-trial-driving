@@ -23,7 +23,7 @@ namespace NepalTrial.Trial
         public void ResetAttempt() { running = false; exitRequested = false; validator = null; }
         public void Begin()
         {
-            if (car == null || trial == null || trial.State != ExamStage.Running ||
+            if (running || car == null || trial == null || trial.State != ExamStage.Running ||
                 trial.IsPaused || trial.CurrentStage != stageId) return;
             validator = new UTurnValidator(minimumTurnDegrees, maximumSeconds);
             validator.Begin();
