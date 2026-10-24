@@ -206,7 +206,7 @@ namespace NepalTrial.EditorTools
                 tire.transform.SetParent(pivot.transform,false);
                 tire.transform.localRotation=Quaternion.Euler(0,0,90f);
                 tire.transform.localScale=new Vector3(.34f,.13f,.34f);
-                tire.GetComponent<BoxCollider>().enabled=false;
+                tire.GetComponent<Collider>().enabled=false;
                 tire.GetComponent<Renderer>().sharedMaterial=dark;
                 Ref(ride,i==0?"frontWheelVisual":"rearWheelVisual",pivot.transform);
             }
@@ -481,7 +481,7 @@ namespace NepalTrial.EditorTools
             string[] names={"Helmet","Mirrors","Brakes","Tires","Submit"};
             for(int i=0;i<names.Length;i++)
             {
-                var button=Button(canvas,names[i],new Vector2(230+(i*165f),-65f),true);
+                var button=Button(canvas,names[i],new Vector2(-205f-(i*165f),-155f),true);
                 switch(i)
                 {
                     case 0:UnityEventTools.AddPersistentListener(button.onClick,sensor.CheckHelmet);break;
