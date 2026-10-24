@@ -1,4 +1,5 @@
 using NepalTrial.Trial;
+using NepalTrial.Settings;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -16,6 +17,8 @@ namespace NepalTrial.Flow
         private Button nextButton;
         private Text statusLabel;
         private string error;
+        private bool vibrationEnabled;
+        private float lastVibrationTime = -10f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Attach()
@@ -30,7 +33,9 @@ namespace NepalTrial.Flow
             trial = FindFirstObjectByType<TrialGameplayRuntime>();
             active = TrialSessionService.Current;
             if (trial == null) { enabled=false; return; }
+            vibrationEnabled = new LocalSettingsStore().Load().vibrationEnabled;
             trial.Finished += OnFinished;
+            trial.ViolationReported += OnViolation;
             trial.AttemptRestarted += OnRestart;
         }
 
@@ -40,6 +45,7 @@ namespace NepalTrial.Flow
         {
             if (trial == null) return;
             trial.Finished -= OnFinished;
+            trial.ViolationReported -= OnViolation;
             trial.AttemptRestarted -= OnRestart;
         }
 
@@ -50,6 +56,17 @@ namespace NepalTrial.Flow
             TrialSessionService.ReportStageResult(state==ExamStage.Passed,trial.Score);
             active = TrialSessionService.Current;
             UpdateStatus();
+        }
+
+        private void OnViolation(string code)
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (vibrationEnabled && Time.unscaledTime - lastVibrationTime > .35f)
+            {
+                Handheld.Vibrate();
+                lastVibrationTime = Time.unscaledTime;
+            }
+#endif
         }
 
         private void OnRestart()
