@@ -19,6 +19,7 @@ namespace NepalTrial.Trial
         [SerializeField, Min(.2f)] private float gateHalfWidth = 1.8f;
         private OrderedDrivingGateTracker tracker;
         private readonly BoundaryIncidentCounter boundary = new BoundaryIncidentCounter();
+        private FigureEightContactMonitor lineMonitor;
         private Vector3 previousPosition;
         private bool known, finished;
 
@@ -43,6 +44,7 @@ namespace NepalTrial.Trial
                 forward[i]=checkpoints[i].forward;
             }
             tracker=new OrderedDrivingGateTracker(points,forward,gateHalfWidth);
+            lineMonitor=new FigureEightContactMonitor(radius,halfWidth);
         }
 
         private void OnEnable() { if (trial != null) trial.AttemptRestarted += ResetAttempt; }
@@ -52,6 +54,7 @@ namespace NepalTrial.Trial
         {
             if (tracker != null) tracker.Reset();
             boundary.Reset();
+            if(lineMonitor!=null)lineMonitor.Reset();
             known=false; finished=false;
         }
 
@@ -78,12 +81,16 @@ namespace NepalTrial.Trial
             if (tracker.NextIndex == 0 || frontWheel == null || rearWheel == null) return;
             Vector2 front=ContactPoint(frontWheel);
             Vector2 rear=ContactPoint(rearWheel);
-            bool outside =
-                !(FigureEightTrackMath.IsWithinAnnulus(front,leftCenter,radius,halfWidth) ||
-                  FigureEightTrackMath.IsWithinAnnulus(front,rightCenter,radius,halfWidth)) ||
-                !(FigureEightTrackMath.IsWithinAnnulus(rear,leftCenter,radius,halfWidth) ||
-                  FigureEightTrackMath.IsWithinAnnulus(rear,rightCenter,radius,halfWidth));
-            if (boundary.Update(outside)) trial.ReportViolation("figure-eight-boundary");
+            FigureEightContactEvent contact=lineMonitor.Sample(
+                new[] {front,rear},leftCenter,rightCenter);
+            if(contact==FigureEightContactEvent.Outside)
+            {
+                boundary.Update(true);
+                trial.ReportViolation("figure-eight-boundary");
+            }
+            else if(contact==FigureEightContactEvent.LineTouch)
+                trial.ReportViolation("figure-eight-line-touch");
+            else boundary.Update(false);
         }
     }
 }
