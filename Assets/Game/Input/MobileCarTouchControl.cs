@@ -1,4 +1,5 @@
 using NepalTrial.Input;
+using NepalTrial.Vehicles.Car;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -7,7 +8,7 @@ namespace NepalTrial.Mobile
     /// <summary>Finger-aware press/release; multiple buttons can remain held simultaneously.</summary>
     public sealed class MobileCarTouchControl : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
     {
-        public enum Control { SteerLeft, SteerRight, Throttle, Brake, Handbrake, Reverse, Reset }
+        public enum Control { SteerLeft, SteerRight, Throttle, Brake, Handbrake, Reverse, Reset, Drive, Neutral, Park }
         [SerializeField] private PrototypeCarInput target;
         [SerializeField] private Control control;
         private int pointerId = int.MinValue;
@@ -53,6 +54,13 @@ namespace NepalTrial.Mobile
                 if (pressed) target.ResetCar();
                 return;
             }
+            if (pressed)
+            {
+                if (control == Control.Drive) { target.SelectGear(DriveGear.Drive); return; }
+                if (control == Control.Neutral) { target.SelectGear(DriveGear.Neutral); return; }
+                if (control == Control.Park) { target.SelectGear(DriveGear.Park); return; }
+            }
+            if (control == Control.Drive || control == Control.Neutral || control == Control.Park) return;
             target.SetMobileButton((int)control, pressed);
         }
     }
