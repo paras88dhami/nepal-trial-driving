@@ -20,5 +20,12 @@ namespace NepalTrial.Vehicles.Car
 
         public static float BrakeTorque(float brake, float torque) =>
             Mathf.Clamp01(brake) * Mathf.Max(0f, torque);
+
+        public static float WheelBrakeTorque(float normalBrake, float holdingTorque, bool inPark, bool handbrakeOn, bool rearWheel)
+        {
+            float park = inPark ? Mathf.Max(0f, holdingTorque) : 0f;
+            float hand = rearWheel && handbrakeOn ? Mathf.Max(0f, holdingTorque) : 0f;
+            return Mathf.Max(0f, normalBrake) + Mathf.Max(park, hand);
+        }
     }
 }
