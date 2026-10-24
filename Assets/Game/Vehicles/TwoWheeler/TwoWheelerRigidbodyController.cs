@@ -40,6 +40,7 @@ namespace NepalTrial.Vehicles.TwoWheeler
         private Rigidbody body;
         private TwoWheelerDynamics dynamics;
         private TwoWheelerTransmission transmission;
+        private TwoWheelerEngineState engine;
         private TwoWheelerControlCommand command;
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
@@ -47,6 +48,8 @@ namespace NepalTrial.Vehicles.TwoWheeler
 
         public TwoWheelerKind Kind => kind;
         public MotorcycleGear CurrentGear => transmission == null ? MotorcycleGear.Neutral : transmission.Gear;
+        public bool EngineRunning => engine == null || engine.Running;
+        public int StallCount => engine == null ? 0 : engine.StallCount;
         public float SpeedKph => body == null ? 0f : body.linearVelocity.magnitude * 3.6f;
         public float ForwardSpeedKph => body == null ? 0f :
             Vector3.Dot(body.linearVelocity, transform.forward) * 3.6f;
@@ -71,6 +74,7 @@ namespace NepalTrial.Vehicles.TwoWheeler
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             dynamics = new TwoWheelerDynamics(kind);
             transmission = new TwoWheelerTransmission(kind);
+            engine = new TwoWheelerEngineState(kind);
             if (frontWheel == null || rearWheel == null)
             {
                 Debug.LogError("Assign both WheelColliders to the two-wheeler controller.",this);
@@ -91,6 +95,7 @@ namespace NepalTrial.Vehicles.TwoWheeler
 
         public void SetControls(TwoWheelerControlCommand next) => command = next.Clamped();
         public void SetDriveEnabled(bool value) => driveEnabled = value;
+        public void StartEngine() { if (engine != null) engine.StartEngine(); }
 
         public bool SelectGear(MotorcycleGear gear)
         {
@@ -108,6 +113,7 @@ namespace NepalTrial.Vehicles.TwoWheeler
             command = default;
             driveEnabled = true;
             if (transmission != null) transmission.Reset();
+            if (engine != null) engine.Reset();
             if (dynamics != null) dynamics.Reset();
             ClearWheelForces();
             body.WakeUp();
@@ -139,7 +145,9 @@ namespace NepalTrial.Vehicles.TwoWheeler
                 command.Steering,SpeedKph / 3.6f,dt,maximumAssistedLean,
                 leanResponseDegreesPerSecond);
 
-            bool driveGear = transmission.CanDrive(command.Clutch >= .5f);
+            if (engine != null) engine.Step(transmission.Gear,command.Clutch,command.Throttle,
+                forwardSpeed / 3.6f,FrontGrounded && RearGrounded,dt);
+            bool driveGear = EngineRunning && transmission.CanDrive(command.Clutch >= .5f);
             frontWheel.motorTorque = 0f;
             rearWheel.motorTorque = TwoWheelerDriveMath.MotorTorque(
                 effectiveThrottle,forwardSpeed,speedLimitKph,rearMotorTorque,
