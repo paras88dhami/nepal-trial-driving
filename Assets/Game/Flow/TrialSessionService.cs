@@ -14,6 +14,15 @@ namespace NepalTrial.Flow
         private const string SessionKey = "NepalTrial.ActiveSession.v1";
         private static TrialPlaySession current;
         private static bool loaded;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticCache()
+        {
+            // Also handles Unity Editor sessions with domain reload disabled.
+            current = null;
+            loaded = false;
+        }
+
         public static TrialPlaySession Current
         {
             get { if (!loaded) Load(); return current; }
