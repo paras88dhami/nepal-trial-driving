@@ -13,8 +13,10 @@ namespace NepalTrial.Input
         private bool left, right, gas, stop, handbrake, reverse;
         private bool mobileMode;
         private bool keyboardReverse;
+        private DriveGear selectedGear = DriveGear.Drive;
         public bool ReverseSelected => mobileMode ? reverse : keyboardReverse;
         public bool HandbrakePressed => handbrake;
+        public DriveGear SelectedGear => selectedGear;
 
         public void SetMobileButton(int button, bool pressed)
         {
@@ -29,11 +31,23 @@ namespace NepalTrial.Input
             }
         }
 
-        public void SetReverse(bool value) { reverse = value; mobileMode = true; }
-        public void ToggleReverse() { reverse = !reverse; mobileMode = true; }
+        public void SetReverse(bool value)
+        {
+            selectedGear = value ? DriveGear.Reverse : DriveGear.Drive;
+            reverse = value;
+            mobileMode = true;
+        }
+        public void ToggleReverse() => SetReverse(selectedGear != DriveGear.Reverse);
+        public void SelectGear(DriveGear gear)
+        {
+            selectedGear = gear;
+            reverse = gear == DriveGear.Reverse;
+            mobileMode = true;
+        }
         public void ResetCar()
         {
             reverse = keyboardReverse = false;
+            selectedGear = DriveGear.Drive;
             left = right = gas = stop = handbrake = false;
             if (car != null) car.ResetVehicle();
         }
@@ -46,12 +60,14 @@ namespace NepalTrial.Input
         {
             mobileMode = false;
             keyboardReverse = false;
+            selectedGear = DriveGear.Drive;
             left = right = gas = stop = handbrake = reverse = false;
         }
 
         private void OnDisable()
         {
             left = right = gas = stop = handbrake = reverse = keyboardReverse = false;
+            selectedGear = DriveGear.Drive;
             if (car != null) car.SetCommand(default);
         }
 
@@ -71,16 +87,22 @@ namespace NepalTrial.Input
                 throttle = k.wKey.isPressed || k.upArrowKey.isPressed ? 1f : 0f;
                 brake = k.sKey.isPressed || k.downArrowKey.isPressed ? 1f : 0f;
                 park = k.spaceKey.isPressed;
-                if (k.rKey.wasPressedThisFrame) keyboardReverse = !keyboardReverse;
+                if (k.rKey.wasPressedThisFrame)
+                    selectedGear = selectedGear == DriveGear.Reverse ? DriveGear.Drive : DriveGear.Reverse;
+                if (k.pKey.wasPressedThisFrame) selectedGear = DriveGear.Park;
+                if (k.nKey.wasPressedThisFrame) selectedGear = DriveGear.Neutral;
+                if (k.dKey.wasPressedThisFrame && (k.leftShiftKey.isPressed || k.rightShiftKey.isPressed))
+                    selectedGear = DriveGear.Drive;
                 if (k.tKey.wasPressedThisFrame) ResetCar();
-                backward = keyboardReverse;
+                backward = selectedGear == DriveGear.Reverse;
             }
 #endif
             if (car != null)
                 car.SetCommand(new CarInputCommand
                 {
                     Steering = steer, Throttle = throttle, Brake = brake,
-                    Reverse = backward, Handbrake = park
+                    Reverse = backward, Handbrake = park,
+                    HasRequestedGear = true, RequestedGear = selectedGear
                 });
         }
     }
