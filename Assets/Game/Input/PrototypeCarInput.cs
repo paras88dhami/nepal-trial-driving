@@ -12,9 +12,8 @@ namespace NepalTrial.Input
         [SerializeField] private CarDriveController car;
         private bool left, right, gas, stop, handbrake, reverse;
         private bool mobileMode;
-        private bool keyboardReverse;
         private DriveGear selectedGear = DriveGear.Drive;
-        public bool ReverseSelected => mobileMode ? reverse : keyboardReverse;
+        public bool ReverseSelected => selectedGear == DriveGear.Reverse;
         public bool HandbrakePressed => handbrake;
         public DriveGear SelectedGear => selectedGear;
 
@@ -46,7 +45,7 @@ namespace NepalTrial.Input
         }
         public void ResetCar()
         {
-            reverse = keyboardReverse = false;
+            reverse = false;
             selectedGear = DriveGear.Drive;
             left = right = gas = stop = handbrake = false;
             if (car != null) car.ResetVehicle();
@@ -59,14 +58,13 @@ namespace NepalTrial.Input
         public void UseKeyboard()
         {
             mobileMode = false;
-            keyboardReverse = false;
             selectedGear = DriveGear.Drive;
             left = right = gas = stop = handbrake = reverse = false;
         }
 
         private void OnDisable()
         {
-            left = right = gas = stop = handbrake = reverse = keyboardReverse = false;
+            left = right = gas = stop = handbrake = reverse = false;
             selectedGear = DriveGear.Drive;
             if (car != null) car.SetCommand(default);
         }
@@ -91,7 +89,7 @@ namespace NepalTrial.Input
                     selectedGear = selectedGear == DriveGear.Reverse ? DriveGear.Drive : DriveGear.Reverse;
                 if (k.pKey.wasPressedThisFrame) selectedGear = DriveGear.Park;
                 if (k.nKey.wasPressedThisFrame) selectedGear = DriveGear.Neutral;
-                if (k.dKey.wasPressedThisFrame && (k.leftShiftKey.isPressed || k.rightShiftKey.isPressed))
+                if (k.gKey.wasPressedThisFrame)
                     selectedGear = DriveGear.Drive;
                 if (k.tKey.wasPressedThisFrame) ResetCar();
                 backward = selectedGear == DriveGear.Reverse;
