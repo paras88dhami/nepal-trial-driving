@@ -392,8 +392,8 @@ namespace NepalTrial.EditorTools
             Ref(boundary,"trial",trial); Ref(boundary,"maneuver",sensor);
             Ref(boundary,"drivingRegion",region);
             Ref(boundary,"vehicleBody",car.GetComponent<BoxCollider>());
-            ManeuverGate("BeginUTurn",new Vector3(0,1,-8),0,car,sensor,null);
-            ManeuverGate("ExitUTurn",new Vector3(0,1,-10),1,car,sensor,null);
+            ManeuverGate("BeginUTurn",new Vector3(0,1,-8),0,trial,car,sensor,null);
+            ManeuverGate("ExitUTurn",new Vector3(0,1,-10),1,trial,car,sensor,null);
         }
 
         private static void CreateHillStart(TrialGameplayRuntime trial,CarDriveController car)
@@ -402,13 +402,13 @@ namespace NepalTrial.EditorTools
             ramp.transform.rotation=Quaternion.Euler(-6f,0,0);
             var observer=new GameObject("HillObserver").AddComponent<CarHillStartSensor>();
             Ref(observer,"trial",trial);Ref(observer,"car",car);
-            ManeuverGate("BeginHill",new Vector3(0,1.4f,-3),2,car,null,observer);
-            ManeuverGate("ExitHill",new Vector3(0,2f,5),3,car,null,observer);
+            ManeuverGate("BeginHill",new Vector3(0,1.4f,-3),2,trial,car,null,observer);
+            ManeuverGate("ExitHill",new Vector3(0,2f,5),3,trial,car,null,observer);
             Block("TopPlatform",new Vector3(0,1.26f,9.5f),new Vector3(8f,.3f,8f),road,true);
         }
 
         private static void ManeuverGate(string name,Vector3 position,int action,
-            CarDriveController car,CarUTurnSensor uTurn,CarHillStartSensor hill)
+            TrialGameplayRuntime trial,CarDriveController car,CarUTurnSensor uTurn,CarHillStartSensor hill)
         {
             var root=new GameObject(name);
             root.transform.position=position;
@@ -417,6 +417,7 @@ namespace NepalTrial.EditorTools
             box.size=new Vector3(12f,4f,1f);
             CarManeuverGate gate=root.AddComponent<CarManeuverGate>();
             Ref(gate,"car",car);
+            Ref(gate,"trial",trial);
             if(uTurn!=null)Ref(gate,"uTurn",uTurn);
             if(hill!=null)Ref(gate,"hill",hill);
             SetInt(gate,"action",action);
