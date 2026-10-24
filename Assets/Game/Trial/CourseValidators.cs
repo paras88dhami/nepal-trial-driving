@@ -33,13 +33,14 @@ namespace NepalTrial.Trial
             if (!started || finished) return new CourseEvent();
             if (deltaSeconds < 0) throw new ArgumentOutOfRangeException(nameof(deltaSeconds));
             elapsed += deltaSeconds;
-            accumulatedTurn += Mathf.Abs(Mathf.DeltaAngle(0f, headingDeltaDegrees));
+            // Require a net turn rather than rewarding left/right steering oscillation.
+            accumulatedTurn += Mathf.DeltaAngle(0f, headingDeltaDegrees);
             if (outsideBoundary) { finished = true; return new CourseEvent(CourseEventKind.Violation, "u-turn-boundary"); }
             if (elapsed > maximumElapsedSeconds) { finished = true; return new CourseEvent(CourseEventKind.Violation, "u-turn-timeout"); }
             if (exitGateCrossed)
             {
                 finished = true;
-                return accumulatedTurn >= minimumTurnDegrees
+                return Mathf.Abs(accumulatedTurn) >= minimumTurnDegrees
                     ? new CourseEvent(CourseEventKind.Completed, "u-turn-complete")
                     : new CourseEvent(CourseEventKind.Violation, "u-turn-incomplete");
             }
@@ -52,6 +53,7 @@ namespace NepalTrial.Trial
         private readonly float maxRollbackMeters;
         private readonly float maximumWaitSeconds;
         private float initialDistance;
+        private float maximumDistance;
         private float wait;
         private bool started;
         private bool complete;
@@ -64,14 +66,17 @@ namespace NepalTrial.Trial
         /// <param name="signedDistanceAlongHill">Distance along the upward direction, in meters.</param>
         public void Begin(float signedDistanceAlongHill)
         {
-            initialDistance = signedDistanceAlongHill; wait = 0; started = true; complete = false;
+            initialDistance = signedDistanceAlongHill;
+            maximumDistance = signedDistanceAlongHill;
+            wait = 0; started = true; complete = false;
         }
         public CourseEvent Sample(float signedDistanceAlongHill, float deltaSeconds, bool reachedExit)
         {
             if (!started || complete) return new CourseEvent();
             if (deltaSeconds < 0) throw new ArgumentOutOfRangeException(nameof(deltaSeconds));
             wait += deltaSeconds;
-            if (initialDistance - signedDistanceAlongHill > maxRollbackMeters)
+            maximumDistance = Mathf.Max(maximumDistance, signedDistanceAlongHill);
+            if (maximumDistance - signedDistanceAlongHill > maxRollbackMeters)
             { complete = true; return new CourseEvent(CourseEventKind.Violation, "hill-rollback"); }
             if (wait > maximumWaitSeconds)
             { complete = true; return new CourseEvent(CourseEventKind.Violation, "hill-timeout"); }
