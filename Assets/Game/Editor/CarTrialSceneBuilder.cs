@@ -234,6 +234,7 @@ namespace NepalTrial.EditorTools
             Text time = TextLabel(canvas,"Time",new Vector2(-200,-160),new Vector2(580,58),30);
             Text status = TextLabel(canvas,"State",new Vector2(-200,-220),new Vector2(580,58),30);
             Text violations = TextLabel(canvas,"Violations",new Vector2(-200,-280),new Vector2(580,58),30);
+            Text checkpoints = TextLabel(canvas,"Checkpoints",new Vector2(-200,-340),new Vector2(580,58),30);
 
             GameObject panel = new GameObject("ResultsPanel",typeof(RectTransform),typeof(Image));
             panel.transform.SetParent(canvas,false);
@@ -254,6 +255,7 @@ namespace NepalTrial.EditorTools
             Ref(hud,"stateLabel",status);
             Ref(hud,"violationsLabel",violations);
             Ref(hud,"resultsPanel",panel);
+            Ref(hud,"checkpointLabel",checkpoints);
             var view = new GameObject("TrialResultText").AddComponent<CarTrialResultsView>();
             Ref(view,"trial",trial);
             Ref(view,"resultsLabel",resultText);
@@ -345,6 +347,8 @@ namespace NepalTrial.EditorTools
             var wheels=car.GetComponentsInChildren<WheelCollider>();
             Array(sensor,"wheels",wheels);
             Array(sensor,"orderedGates",transforms.ToArray());
+            var hud = UnityEngine.Object.FindFirstObjectByType<TrialSessionHud>();
+            if (hud != null) Ref(hud,"figureEight",sensor);
         }
 
         private static void Ring(string name,float centerX,float radius,Material material)
