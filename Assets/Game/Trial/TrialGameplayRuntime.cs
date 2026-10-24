@@ -14,7 +14,7 @@ namespace NepalTrial.Trial
     public sealed class TrialGameplayRuntime : MonoBehaviour
     {
         [Serializable]
-        public struct PenaltyRule { public string code; public int points; }
+        public struct PenaltyRule { public string code; public int points; public int failAtOccurrence; }
 
         [SerializeField] private string courseId = "prototype-figure-eight";
         [SerializeField] private string[] orderedStages = { "start", "finish" };
@@ -42,12 +42,17 @@ namespace NepalTrial.Trial
             try
             {
                 var penalties = new Dictionary<string, int>();
+                var failureLimits = new Dictionary<string,int>();
                 if (penaltyRules != null)
                     foreach (var rule in penaltyRules)
                         if (!string.IsNullOrEmpty(rule.code) && !penalties.ContainsKey(rule.code))
+                        {
                             penalties.Add(rule.code, rule.points);
+                            if (rule.failAtOccurrence > 0)
+                                failureLimits.Add(rule.code,rule.failAtOccurrence);
+                        }
                 coordinator = new TrialRunCoordinator(orderedStages, penalties, startingScore,
-                    passingScore, durationSeconds);
+                    passingScore, durationSeconds, failureLimits);
             }
             catch (Exception exception)
             {
