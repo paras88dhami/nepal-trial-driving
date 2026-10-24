@@ -25,6 +25,8 @@ namespace NepalTrial.Trial
         }
 
         private void Reset() => GetComponent<BoxCollider>().isTrigger = true;
+        private void OnEnable() { if (trial != null) trial.AttemptRestarted += Clear; }
+        private void Clear() { overlaps.Clear(); if (validator != null) validator.Reset(); }
 
         private void OnTriggerEnter(Collider other)
         {
@@ -40,7 +42,7 @@ namespace NepalTrial.Trial
 
         private void FixedUpdate()
         {
-            if (trial == null || car == null || vehicleBody == null || validator == null || overlaps.Count == 0) return;
+            if (trial == null || trial.IsPaused || trial.State != ExamStage.Running || trial.CurrentStage != stageId || car == null || vehicleBody == null || validator == null || overlaps.Count == 0) return;
             bool inside = CarGarageGeometry.VehicleFullyInside(region, vehicleBody);
             CourseEvent result = validator.Sample(inside, false, car.SpeedKph / 3.6f, Time.fixedDeltaTime);
             if (result.Kind == CourseEventKind.Completed) trial.ReportStage(stageId);
@@ -49,6 +51,7 @@ namespace NepalTrial.Trial
 
         private void OnDisable()
         {
+            if (trial != null) trial.AttemptRestarted -= Clear;
             overlaps.Clear();
             if (validator != null) validator.Reset();
         }
