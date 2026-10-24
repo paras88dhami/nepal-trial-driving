@@ -60,7 +60,7 @@ namespace NepalTrial.EditorTools
                         nameof(CarGarageParkingSensor);
                     MonoBehaviour sensor = null;
                     foreach (var behaviour in UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
-                        if (behaviour.GetType().Name == component) { sensor = behaviour; break; }
+                        if (behaviour != null && behaviour.GetType().Name == component) { sensor = behaviour; break; }
                     if (sensor == null)
                     {
                         Debug.LogError(path + ": " + component + " missing");
