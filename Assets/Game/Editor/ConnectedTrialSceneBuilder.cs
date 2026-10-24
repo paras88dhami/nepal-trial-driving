@@ -269,7 +269,7 @@ namespace NepalTrial.EditorTools
                 {
                     RebuildOfficialEight(stageRoot.transform,twoWheeler);
                     Vector3 spawn=twoWheeler
-                        ? new Vector3(-2.25f,1.05f,-2.5f)
+                        ? new Vector3(-2.25f,1.05f,-2.25f)
                         : new Vector3(-4.5f,1.15f,-4.5f);
                     var root=twoWheeler ? sharedBike.transform : sharedCar.transform;
                     root.SetPositionAndRotation(spawn,Quaternion.Euler(0,90,0));
@@ -466,11 +466,11 @@ namespace NepalTrial.EditorTools
         {
             // Bagmati published track measurements:
             // Category B: outer diameter 12 m, inner diameter 6 m, center spacing 9 m.
-            // A/K: outer radius 3.5 m, inner radius 1.5 m, center spacing 4.5 m.
+            // A/K: outer radius 3 m, inner radius 1.5 m, center spacing 4.5 m.
             // Drawings are top-down reference geometry, not finished road mesh.
             float halfCenter=bike?2.25f:4.5f;
             float inner=bike?1.5f:3f;
-            float outer=bike?3.5f:6f;
+            float outer=bike?3f:6f;
             float middle=(inner+outer)*.5f;
             float halfWidth=(outer-inner)*.5f;
             foreach(Transform child in stageRoot.GetComponentsInChildren<Transform>(true))
