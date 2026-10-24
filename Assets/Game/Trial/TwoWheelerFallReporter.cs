@@ -31,7 +31,11 @@ namespace NepalTrial.Trial
             CourseEvent fall = validator.Sample(vehicle.TiltDegrees);
             if (fall.Kind == CourseEventKind.Violation) trial.ReportViolation(fallCode);
             bool footDown = vehicle.FootDown;
-            if (footDown && !footPreviouslyDown) trial.ReportViolation(footDownCode);
+            // Plank/ramp/bumpy sensors own their foot-down violations: avoid double charging.
+            bool handledByCourse = trial.CurrentStage == "narrow-plank" ||
+                trial.CurrentStage == "ramp" || trial.CurrentStage == "speed-breaker";
+            if (footDown && !footPreviouslyDown && !handledByCourse)
+                trial.ReportViolation(footDownCode);
             footPreviouslyDown = footDown;
         }
     }
