@@ -487,6 +487,12 @@ namespace NepalTrial.EditorTools
 
         private static void RebuildCarRamp(Transform stageRoot)
         {
+            // Small-car ramp: 8.5m ascent + 8m crest + 8.5m descent,
+            // with 5m lane width (published 2074 training-ground limits).
+            SetBox(stageRoot,"DrivableRamp",new Vector3(0,.65f,0),
+                new Vector3(5f,.35f,8.5f),Quaternion.Euler(-10f,0,0));
+            SetBox(stageRoot,"TopPlatform",new Vector3(0,1.43f,8.25f),
+                new Vector3(5f,.3f,8f),Quaternion.identity);
             CarHillStartSensor hill=stageRoot.GetComponentInChildren<CarHillStartSensor>(true);
             if(hill==null)throw new InvalidOperationException("Hill-start sensor missing.");
             var upStop=new GameObject("Ramp_UphillStopArea");
@@ -494,18 +500,18 @@ namespace NepalTrial.EditorTools
             upStop.transform.position=new Vector3(0,1.8f,.5f);
             BoxCollider uphill=upStop.AddComponent<BoxCollider>();
             uphill.isTrigger=true;
-            uphill.size=new Vector3(8f,4f,2.5f);
+            uphill.size=new Vector3(5f,4f,2.5f);
 
             var downStop=new GameObject("Ramp_DownhillStopArea");
             downStop.transform.SetParent(stageRoot,false);
-            downStop.transform.position=new Vector3(0,1.5f,23f);
+            downStop.transform.position=new Vector3(0,1.5f,17f);
             BoxCollider downhill=downStop.AddComponent<BoxCollider>();
             downhill.isTrigger=true;
-            downhill.size=new Vector3(8f,4f,2.5f);
+            downhill.size=new Vector3(5f,4f,2.5f);
 
             var crest=new GameObject("Ramp_DescentStart");
             crest.transform.SetParent(stageRoot,false);
-            crest.transform.position=new Vector3(0,1.3f,13.5f);
+            crest.transform.position=new Vector3(0,1.5f,12.5f);
             crest.transform.forward=Vector3.forward;
 
             var axis=new GameObject("Ramp_TravelAxis");
@@ -524,20 +530,20 @@ namespace NepalTrial.EditorTools
 
             Transform exit=stageRoot.Find("ExitHill");
             if(exit==null)throw new InvalidOperationException("Expected ExitHill trigger missing.");
-            exit.position=new Vector3(0,1.5f,27f);
+            exit.position=new Vector3(0,1.5f,22f);
             Transform stripe=stageRoot.Find("ExitHill_Stripe");
-            if(stripe!=null)stripe.position=new Vector3(0,.12f,27f);
+            if(stripe!=null)stripe.position=new Vector3(0,.12f,22f);
 
             GameObject descending=GameObject.CreatePrimitive(PrimitiveType.Cube);
             descending.name="Car_DrivableDownhillRamp";
             descending.transform.SetParent(stageRoot,false);
-            descending.transform.position=new Vector3(0,.65f,20f);
-            descending.transform.localScale=new Vector3(8f,.35f,12f);
-            descending.transform.rotation=Quaternion.Euler(6f,0,0);
+            descending.transform.position=new Vector3(0,.65f,16.5f);
+            descending.transform.localScale=new Vector3(5f,.35f,8.5f);
+            descending.transform.rotation=Quaternion.Euler(10f,0,0);
             descending.GetComponent<Renderer>().sharedMaterial=CreateMaterial(
                 "ConnectedRoad",new Color(.19f,.21f,.24f));
-            DrawStripe("RampDownhillStopStripe",new Vector3(0,.10f,23f),
-                new Vector3(8f,.04f,.15f),
+            DrawStripe("RampDownhillStopStripe",new Vector3(0,.10f,17f),
+                new Vector3(5f,.04f,.15f),
                 CreateMaterial("ConnectedFigureEightLines",new Color(.96f,.80f,.10f)),stageRoot);
         }
 
