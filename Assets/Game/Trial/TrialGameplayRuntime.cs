@@ -35,6 +35,7 @@ namespace NepalTrial.Trial
         public event Action<ExamStage> Finished;
         public event Action AttemptRestarted;
         public event Action<string> StageCompleted;
+        public event Action<string> ViolationReported;
 
         private void Awake()
         {
@@ -84,6 +85,7 @@ namespace NepalTrial.Trial
         public bool ReportViolation(string code)
         {
             if (coordinator == null || !coordinator.ReportViolation(code)) return false;
+            ViolationReported?.Invoke(code);
             RecordIfFinished();
             return true;
         }
