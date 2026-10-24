@@ -10,6 +10,7 @@ namespace NepalTrial.Flow
         public int schemaVersion = 1;
         public string vehicleId;
         public string runId;
+        public bool connectedExam;
         public DriveMode mode;
         public string[] courses;
         public int stageIndex;
@@ -44,12 +45,31 @@ namespace NepalTrial.Flow
                 runId = Guid.NewGuid().ToString("N") };
         }
 
+        /// <summary>One complete physical exam ground, with seven stages sharing one score.</summary>
+        public static TrialPlaySession CreateConnectedExam(string vehicleId)
+        {
+            TrialPlaySession session=Create(vehicleId,DriveMode.Exam);
+            session.connectedExam=true;
+            session.courses=TrialCatalog.ConnectedExamStagesFor(vehicleId);
+            return session;
+        }
+
         /// <summary>Completing a stage is idempotent until advancing or restarting it.</summary>
         public static bool ReportStageResult(TrialPlaySession session, bool passed, int score)
         {
             if (session == null || session.ended || session.pendingStageScore >= 0 ||
                 string.IsNullOrEmpty(session.CurrentCourse) || score < 0 || score > StartingScore)
                 return false;
+            if (session.connectedExam)
+            {
+                // The scene owns the single seven-stage ExamSession. It reports
+                // only its final overall score here: never sum seven 100-point scores.
+                session.finalScore=score;
+                session.stageIndex=session.courses.Length-1;
+                session.passed=passed && score>=PassingScore;
+                session.ended=true;
+                return true;
+            }
             session.pendingStageScore = score;
             session.pendingStagePassed = passed;
             if (session.mode == DriveMode.Exam)
