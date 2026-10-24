@@ -23,6 +23,8 @@ namespace NepalTrial.Vehicles.Car
 
         private Rigidbody body;
         private CarInputCommand command;
+        private Vector3 resetPosition;
+        private Quaternion resetRotation;
         private readonly TransmissionState transmission = new TransmissionState();
         public DriveGear CurrentGear => transmission.Gear;
         public bool HandbrakeEngaged => transmission.HandbrakeOn;
@@ -34,6 +36,10 @@ namespace NepalTrial.Vehicles.Car
             body = GetComponent<Rigidbody>();
             body.mass = 1050f;
             body.interpolation = RigidbodyInterpolation.Interpolate;
+            resetPosition = body.position;
+            resetRotation = body.rotation;
+            // Lower center of mass to improve prototype rollover resistance.
+            body.centerOfMass += new Vector3(0f, -0.25f, 0f);
             // Preserve prototype behaviour: begin in Drive with parking brake released.
             transmission.TrySelect(DriveGear.Drive, 0f, true);
             transmission.SetHandbrake(false);
@@ -42,6 +48,31 @@ namespace NepalTrial.Vehicles.Car
         }
 
         public void SetCommand(CarInputCommand value) => command = value.Clamped();
+
+        /// <summary>Returns car to initial position; clears momentum, gear and wheel torques.</summary>
+        public void ResetVehicle()
+        {
+            if (body == null) return;
+            command = default;
+            body.position = resetPosition;
+            body.rotation = resetRotation;
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            transmission.SetHandbrake(false);
+            transmission.TrySelect(DriveGear.Drive, 0f, true);
+            ClearWheelForces();
+            body.WakeUp();
+        }
+
+        private void ClearWheelForces()
+        {
+            if (!WheelsReady()) return;
+            foreach (var wheel in new[] { frontLeft, frontRight, rearLeft, rearRight })
+            {
+                wheel.motorTorque = 0f;
+                wheel.brakeTorque = 0f;
+            }
+        }
 
         private bool WheelsReady() =>
             frontLeft != null && frontRight != null && rearLeft != null && rearRight != null;
@@ -78,8 +109,7 @@ namespace NepalTrial.Vehicles.Car
         private void OnDisable()
         {
             command = default;
-            if (!WheelsReady()) return;
-            rearLeft.motorTorque = rearRight.motorTorque = 0f;
+            ClearWheelForces();
         }
     }
 }
