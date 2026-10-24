@@ -28,7 +28,9 @@ namespace NepalTrial.Trial
                 !overlaps.Add(other) || overlaps.Count != 1) return;
             CourseEvent evt=validator.Sample(true,light);
             if (evt.Kind == CourseEventKind.Violation) trial.ReportViolation(evt.Code);
-            else if (evt.Kind == CourseEventKind.Completed) trial.ReportStage(stageId);
+            if (trial.State == ExamStage.Running &&
+                (evt.Kind == CourseEventKind.Completed || evt.Kind == CourseEventKind.Violation))
+                trial.ReportStage(stageId);
         }
         private void OnTriggerExit(Collider other)
         {
