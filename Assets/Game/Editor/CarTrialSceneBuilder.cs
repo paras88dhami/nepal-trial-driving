@@ -26,25 +26,38 @@ namespace NepalTrial.EditorTools
         [MenuItem("Nepal Trial/Phase 2/Create Car Trial Scenes")]
         public static void CreateAll()
         {
+            // Scene generation switches active scenes: protect unsaved user changes.
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            string originalScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().path;
             Directory.CreateDirectory(SceneFolder);
             Directory.CreateDirectory(MaterialFolder);
             AssetDatabase.Refresh();
             PrepareMaterials();
             int created = 0;
-            foreach (string id in new[] { "figure-eight", "u-turn", "hill-start",
-                "traffic-light", "speed-breaker", "garage" })
+            try
             {
-                string scenePath = SceneFolder + "/CarTrial_" + id + ".unity";
-                if (File.Exists(scenePath))
+                foreach (string id in new[] { "figure-eight", "u-turn", "hill-start",
+                    "traffic-light", "speed-breaker", "garage" })
                 {
-                    Debug.LogWarning("Scene already exists, preserving your edits: " + scenePath);
-                    continue;
+                    string scenePath = SceneFolder + "/CarTrial_" + id + ".unity";
+                    if (File.Exists(scenePath))
+                    {
+                        Debug.LogWarning("Scene already exists, preserving your edits: " + scenePath);
+                        continue;
+                    }
+                    CreateCourse(id, scenePath);
+                    created++;
                 }
-                CreateCourse(id, scenePath);
-                created++;
             }
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+            finally
+            {
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+                if (!string.IsNullOrEmpty(originalScene) && File.Exists(originalScene))
+                    EditorSceneManager.OpenScene(originalScene, OpenSceneMode.Single);
+                else
+                    EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+            }
             Debug.Log("Phase 2: generated " + created + " car trial scenes. Open a CarTrial_*.unity scene and press Play. Trial dimensions/penalties are provisional.");
         }
 
