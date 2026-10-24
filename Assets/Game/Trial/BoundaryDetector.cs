@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,13 +9,13 @@ namespace NepalTrial.Trial
     {
         [SerializeField] private string wheelTag = "PlayerWheel";
         [SerializeField] private float rearmSeconds = 1.5f;
-        private readonly Dictionary<int, float> lastSeen = new Dictionary<int, float>();
+        private readonly Dictionary<EntityId, float> lastSeen = new Dictionary<EntityId, float>();
         public event Action<string> BoundaryHit;
 
         private void OnTriggerEnter(Collider other)
         {
             if (!other.CompareTag(wheelTag)) return;
-            int id = other.GetInstanceID();
+            EntityId id = other.GetEntityId();
             float now = Time.time;
             if (lastSeen.TryGetValue(id, out var previous) && now - previous < rearmSeconds) return;
             lastSeen[id] = now;
@@ -23,3 +23,5 @@ namespace NepalTrial.Trial
         }
     }
 }
+
+
