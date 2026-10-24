@@ -177,6 +177,12 @@ namespace NepalTrial.Flow
             statusLabel.alignment=TextAnchor.MiddleCenter;
             statusLabel.color=Color.white;
             statusLabel.raycastTarget=false;
+
+            // Unity UI Text can intercept pointer events even when its background is
+            // transparent. This fixes existing generated course scenes without rebuilding.
+            foreach (Text label in canvas.GetComponentsInChildren<Text>(true))
+                label.raycastTarget = false;
+
             UpdateStatus();
         }
     }
