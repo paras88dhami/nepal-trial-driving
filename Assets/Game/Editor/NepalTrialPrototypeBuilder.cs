@@ -62,6 +62,7 @@ namespace NepalTrial.EditorTools
             CreateButton(canvas.transform,"Right",new Vector2(320,120),new Vector2(160,130),input,MobileCarTouchControl.Control.SteerRight);
             CreateButton(canvas.transform,"Brake",new Vector2(-380,120),new Vector2(160,130),input,MobileCarTouchControl.Control.Brake,true);
             CreateButton(canvas.transform,"Gas",new Vector2(-170,120),new Vector2(160,130),input,MobileCarTouchControl.Control.Throttle,true);
+            AddMissingControlButtons(canvas.transform, input);
             // Ordered practice gates are placeholders, not government dimensions.
             var gates = new Transform[4];
             var gatePoints = new[]
@@ -88,6 +89,35 @@ namespace NepalTrial.EditorTools
             EditorSceneManager.SaveScene(scene,"Assets/Scenes/PrototypeCar.unity");
             Selection.activeGameObject=car;
             Debug.Log("Prototype scene generated. Open Assets/Scenes/PrototypeCar.unity. Test physics in Play Mode; not an official trial course.");
+        }
+
+        [MenuItem("Nepal Trial/Upgrade Current Car Controls")]
+        public static void UpgradeCurrentCarControls()
+        {
+            var input = Object.FindFirstObjectByType<PrototypeCarInput>();
+            var canvas = GameObject.Find("TouchCanvas");
+            if (input == null || canvas == null)
+            {
+                Debug.LogWarning("Open a generated car prototype scene first; TouchCanvas or PrototypeCarInput is missing.");
+                return;
+            }
+
+            AddMissingControlButtons(canvas.transform, input);
+            EditorSceneManager.MarkSceneDirty(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+            Debug.Log("Car controls upgraded. Save the scene (Ctrl+S); test Reverse, Handbrake and Reset.");
+        }
+
+        private static void AddMissingControlButtons(Transform canvas, PrototypeCarInput input)
+        {
+            if (canvas.Find("Reverse") == null)
+                CreateButton(canvas, "Reverse", new Vector2(-590f,120f), new Vector2(160f,130f),
+                    input, MobileCarTouchControl.Control.Reverse, true);
+            if (canvas.Find("Handbrake") == null)
+                CreateButton(canvas, "Handbrake", new Vector2(-800f,120f), new Vector2(190f,130f),
+                    input, MobileCarTouchControl.Control.Handbrake, true);
+            if (canvas.Find("Reset") == null)
+                CreateButton(canvas, "Reset", new Vector2(-170f,320f), new Vector2(160f,100f),
+                    input, MobileCarTouchControl.Control.Reset, true);
         }
 
         private static Text CreateHudLabel(Transform parent, string value, Vector2 offset)
