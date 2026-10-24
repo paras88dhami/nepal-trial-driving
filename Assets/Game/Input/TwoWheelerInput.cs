@@ -1,4 +1,5 @@
 using NepalTrial.Vehicles.TwoWheeler;
+using NepalTrial.Settings;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -15,6 +16,8 @@ namespace NepalTrial.Input
         [SerializeField] private TwoWheelerRigidbodyController vehicle;
         private bool left, right, gas, frontBrake, rearBrake, clutch, footDown;
         private bool leftIndicator, rightIndicator, mobileMode;
+        private float steeringSensitivity = 1f;
+        private void Awake() => steeringSensitivity = new LocalSettingsStore().Load().steeringSensitivity;
         public bool FootDown => footDown;
         public bool LeftIndicator => leftIndicator;
         public bool RightIndicator => rightIndicator;
@@ -103,7 +106,7 @@ namespace NepalTrial.Input
             if (vehicle == null) return;
             vehicle.SetControls(new TwoWheelerControlCommand
             {
-                Steering = (right ? 1f : 0f) - (left ? 1f : 0f),
+                Steering = Mathf.Clamp(((right ? 1f : 0f) - (left ? 1f : 0f)) * steeringSensitivity, -1f, 1f),
                 Throttle = gas ? 1f : 0f,
                 FrontBrake = frontBrake ? 1f : 0f,
                 RearBrake = rearBrake ? 1f : 0f,
