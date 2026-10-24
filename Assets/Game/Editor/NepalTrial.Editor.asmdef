@@ -1,27 +1,20 @@
-﻿{
-    "name":  "NepalTrial.Editor",
-    "rootNamespace":  "NepalTrial.EditorTools",
-    "references":  [
-                       "NepalTrial.Runtime",
-                       "Unity.InputSystem"
-                   ],
-    "includePlatforms":  [
-                             "Editor"
-                         ],
-    "excludePlatforms":  [
-
-                         ],
-    "allowUnsafeCode":  false,
-    "overrideReferences":  false,
-    "precompiledReferences":  [
-
-                              ],
-    "autoReferenced":  true,
-    "defineConstraints":  [
-
-                          ],
-    "versionDefines":  [
-
-                       ],
-    "noEngineReferences":  false
+{
+  "name": "NepalTrial.Editor",
+  "rootNamespace": "NepalTrial.EditorTools",
+  "references": [
+    "NepalTrial.Runtime",
+    "Unity.InputSystem",
+    "Unity.ugui"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
 }
