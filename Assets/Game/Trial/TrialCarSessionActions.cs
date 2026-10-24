@@ -1,6 +1,8 @@
 using NepalTrial.Input;
 using NepalTrial.Vehicles.Car;
 using UnityEngine;
+using NepalTrial.Flow;
+using UnityEngine.SceneManagement;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -16,6 +18,8 @@ namespace NepalTrial.Trial
         private Rigidbody body;
         private Vector3 savedVelocity, savedAngularVelocity;
         private bool frozen;
+        private bool freeDrivePaused;
+        private bool FreeDrive => TrialSessionService.IsFreeDriveScene(SceneManager.GetActiveScene().name);
 
         private void Awake() { if (car != null) body = car.GetComponent<Rigidbody>(); }
 
@@ -33,12 +37,14 @@ namespace NepalTrial.Trial
         public void TogglePause()
         {
             if (trial == null) return;
-            SetPaused(!trial.IsPaused);
+            SetPaused(!(FreeDrive ? freeDrivePaused : trial.IsPaused));
         }
 
         public void SetPaused(bool paused)
         {
-            if (trial == null || !trial.SetPaused(paused)) return;
+            if (trial == null) return;
+            if (FreeDrive) freeDrivePaused = paused;
+            else if (!trial.SetPaused(paused)) return;
             if (body == null || frozen == paused) return;
             if (paused)
             {
@@ -62,6 +68,7 @@ namespace NepalTrial.Trial
         {
             if (trial == null) return;
             if (frozen && body != null) { body.isKinematic = false; frozen = false; }
+            freeDrivePaused = false;
             if (input != null) input.ResetCar();
             else if (car != null) car.ResetVehicle();
             trial.RestartAttempt();
@@ -71,6 +78,7 @@ namespace NepalTrial.Trial
         {
             if (frozen && body != null) body.isKinematic = false;
             frozen = false;
+            freeDrivePaused = false;
         }
     }
 }
