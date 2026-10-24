@@ -103,12 +103,11 @@ namespace NepalTrial.Vehicles.Car
             rearRight.motorTorque = requestedTorque * 0.5f;
 
             float normalBrake = CarDriveMath.BrakeTorque(command.Brake, brakeTorque);
-            // Park must physically hold all wheels; Neutral intentionally rolls freely.
-            float parkTorque = transmission.Gear == DriveGear.Park ? handbrakeTorque : 0f;
-            frontLeft.brakeTorque = normalBrake + parkTorque;
-            frontRight.brakeTorque = normalBrake + parkTorque;
-            rearLeft.brakeTorque = normalBrake + Mathf.Max(parkTorque, transmission.HandbrakeOn ? handbrakeTorque : 0f);
-            rearRight.brakeTorque = normalBrake + Mathf.Max(parkTorque, transmission.HandbrakeOn ? handbrakeTorque : 0f);
+            bool parked = transmission.Gear == DriveGear.Park;
+            frontLeft.brakeTorque = CarDriveMath.WheelBrakeTorque(normalBrake, handbrakeTorque, parked, transmission.HandbrakeOn, false);
+            frontRight.brakeTorque = CarDriveMath.WheelBrakeTorque(normalBrake, handbrakeTorque, parked, transmission.HandbrakeOn, false);
+            rearLeft.brakeTorque = CarDriveMath.WheelBrakeTorque(normalBrake, handbrakeTorque, parked, transmission.HandbrakeOn, true);
+            rearRight.brakeTorque = CarDriveMath.WheelBrakeTorque(normalBrake, handbrakeTorque, parked, transmission.HandbrakeOn, true);
         }
 
         private void OnDisable()
