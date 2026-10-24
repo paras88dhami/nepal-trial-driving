@@ -252,8 +252,19 @@ namespace NepalTrial.EditorTools
                     sharedBikeInput=UnityEngine.Object.FindFirstObjectByType<TwoWheelerInput>();
                     if (sharedTrial==null || (twoWheeler ? sharedBike==null : sharedCar==null))
                         throw new InvalidOperationException("Base stage is missing trial runtime or correct vehicle.");
-                    if (!twoWheeler && sharedCar.GetComponent<CarTurnIndicators>()==null)
-                        sharedCar.gameObject.AddComponent<CarTurnIndicators>();
+                    if(!twoWheeler)
+                    {
+                        var drive=new SerializedObject(sharedCar);
+                        drive.FindProperty("manualClutchMode").boolValue=true;
+                        drive.ApplyModifiedPropertiesWithoutUndo();
+                        if(sharedCar.GetComponent<CarTurnIndicators>()==null)
+                            sharedCar.gameObject.AddComponent<CarTurnIndicators>();
+                        var stalls=sharedCar.gameObject.AddComponent<CarStallReporter>();
+                        var stallFields=new SerializedObject(stalls);
+                        stallFields.FindProperty("trial").objectReferenceValue=sharedTrial;
+                        stallFields.FindProperty("car").objectReferenceValue=sharedCar;
+                        stallFields.ApplyModifiedPropertiesWithoutUndo();
+                    }
                 }
                 else
                 {
