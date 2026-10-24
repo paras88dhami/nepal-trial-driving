@@ -102,6 +102,7 @@ namespace NepalTrial.Input
                 if (k.gKey.wasPressedThisFrame)
                     selectedGear = DriveGear.Drive;
                 if (k.tKey.wasPressedThisFrame) ResetCar();
+                if (k.iKey.wasPressedThisFrame && car!=null) car.StartEngine();
                 backward = selectedGear == DriveGear.Reverse;
                 clutchValue=k.leftShiftKey.isPressed || k.rightShiftKey.isPressed ? 1f : 0f;
             }
