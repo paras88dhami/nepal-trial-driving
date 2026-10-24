@@ -115,9 +115,10 @@ namespace NepalTrial.Flow
             // Practice stage results are recorded by the gameplay runtime. The session
             // service only records an EXAM aggregate to prevent double counting.
             if (session.mode != DriveMode.Exam) { session.recordWritten = true; return false; }
-            ProgressRules.RecordAttempt(data,RecordKey(session),session.finalScore,session.passed);
+            bool added = ProgressRules.RecordRunOnce(data,RecordKey(session),session.finalScore,
+                session.passed,session.runId);
             session.recordWritten = true;
-            return true;
+            return added;
         }
     }
 }
