@@ -1,0 +1,24 @@
+name: Unity Source Gate (not runtime tests)
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-unity-structure:
+    name: Source files and assembly definitions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Unity project prerequisites
+        run: python3 tools/check_unity_repo.py
+      - name: Explain validation scope
+        run: |
+          echo "::notice::This workflow does NOT run Unity compilation, EditMode, PlayMode or Android builds."
+          echo "::notice::Release readiness requires locally generated scenes and a real Unity Test Runner report."
