@@ -270,6 +270,8 @@ namespace NepalTrial.EditorTools
                 }
                 if(!twoWheeler && stages[stage]=="garage")
                     RebuildCarLBack(stageRoot.transform,sharedTrial,sharedCar);
+                if(!twoWheeler && stages[stage]=="hill-start")
+                    RebuildCarRamp(stageRoot.transform);
                 stageRoot.transform.position=new Vector3(0,0,stage*Spacing);
                 PlaceStageSign(stageRoot.transform,stages[stage],stage);
             }
@@ -290,6 +292,62 @@ namespace NepalTrial.EditorTools
                 throw new IOException("Unity failed to save "+output);
             Debug.Log("Generated "+output+" with one vehicle and seven ordered trial stages. "+
                 "Road links and trigger placement MUST be checked in PlayMode.");
+        }
+
+        private static void RebuildCarRamp(Transform stageRoot)
+        {
+            CarHillStartSensor hill=stageRoot.GetComponentInChildren<CarHillStartSensor>(true);
+            if(hill==null)throw new InvalidOperationException("Hill-start sensor missing.");
+            var upStop=new GameObject("Ramp_UphillStopArea");
+            upStop.transform.SetParent(stageRoot,false);
+            upStop.transform.position=new Vector3(0,1.8f,.5f);
+            BoxCollider uphill=upStop.AddComponent<BoxCollider>();
+            uphill.isTrigger=true;
+            uphill.size=new Vector3(8f,4f,2.5f);
+
+            var downStop=new GameObject("Ramp_DownhillStopArea");
+            downStop.transform.SetParent(stageRoot,false);
+            downStop.transform.position=new Vector3(0,1.5f,23f);
+            BoxCollider downhill=downStop.AddComponent<BoxCollider>();
+            downhill.isTrigger=true;
+            downhill.size=new Vector3(8f,4f,2.5f);
+
+            var crest=new GameObject("Ramp_DescentStart");
+            crest.transform.SetParent(stageRoot,false);
+            crest.transform.position=new Vector3(0,1.3f,13.5f);
+            crest.transform.forward=Vector3.forward;
+
+            var axis=new GameObject("Ramp_TravelAxis");
+            axis.transform.SetParent(stageRoot,false);
+            axis.transform.position=Vector3.zero;
+            axis.transform.forward=Vector3.forward;
+
+            var s=new SerializedObject(hill);
+            s.FindProperty("uphillStopZone").objectReferenceValue=uphill;
+            s.FindProperty("downhillStopZone").objectReferenceValue=downhill;
+            s.FindProperty("descentStart").objectReferenceValue=crest.transform;
+            s.FindProperty("uphillAxis").objectReferenceValue=axis.transform;
+            s.FindProperty("maxRollbackMeters").floatValue=.1524f;
+            s.FindProperty("maximumSeconds").floatValue=90f;
+            s.ApplyModifiedPropertiesWithoutUndo();
+
+            Transform exit=stageRoot.Find("ExitHill");
+            if(exit==null)throw new InvalidOperationException("Expected ExitHill trigger missing.");
+            exit.position=new Vector3(0,1.5f,27f);
+            Transform stripe=stageRoot.Find("ExitHill_Stripe");
+            if(stripe!=null)stripe.position=new Vector3(0,.12f,27f);
+
+            GameObject descending=GameObject.CreatePrimitive(PrimitiveType.Cube);
+            descending.name="Car_DrivableDownhillRamp";
+            descending.transform.SetParent(stageRoot,false);
+            descending.transform.position=new Vector3(0,.65f,20f);
+            descending.transform.localScale=new Vector3(8f,.35f,12f);
+            descending.transform.rotation=Quaternion.Euler(6f,0,0);
+            descending.GetComponent<Renderer>().sharedMaterial=CreateMaterial(
+                "ConnectedRoad",new Color(.19f,.21f,.24f));
+            DrawStripe("RampDownhillStopStripe",new Vector3(0,.10f,23f),
+                new Vector3(8f,.04f,.15f),
+                CreateMaterial("ConnectedFigureEightLines",new Color(.96f,.80f,.10f)),stageRoot);
         }
 
         private static void RebuildCarLBack(Transform stageRoot,
