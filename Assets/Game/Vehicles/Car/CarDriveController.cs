@@ -22,12 +22,17 @@ namespace NepalTrial.Vehicles.Car
         [SerializeField, Range(0.1f, 1f)] private float highSpeedSteeringFraction = 0.45f;
         [SerializeField, Min(1)] private float steeringReductionSpeedKph = 35f;
 
+        [SerializeField] private bool manualClutchMode;
+        private readonly CarManualEngineState engine=new CarManualEngineState();
         private Rigidbody body;
         private CarInputCommand command;
         private Vector3 resetPosition;
         private Quaternion resetRotation;
         private readonly TransmissionState transmission = new TransmissionState();
         public DriveGear CurrentGear => transmission.Gear;
+        public bool EngineRunning => engine.Running;
+        public int StallCount => engine.StallCount;
+        public bool ManualClutchMode => manualClutchMode;
         public bool HandbrakeEngaged => transmission.HandbrakeOn;
 
         public float SpeedKph => body != null ? body.linearVelocity.magnitude * 3.6f : 0f;
@@ -49,12 +54,14 @@ namespace NepalTrial.Vehicles.Car
         }
 
         public void SetCommand(CarInputCommand value) => command = value.Clamped();
+        public void StartEngine() => engine.RestartEngine();
 
         /// <summary>Returns car to initial position; clears momentum, gear and wheel torques.</summary>
         public void ResetVehicle()
         {
             if (body == null) return;
             command = default;
+            engine.Reset();
             body.position = resetPosition;
             body.rotation = resetRotation;
             body.linearVelocity = Vector3.zero;
@@ -89,6 +96,8 @@ namespace NepalTrial.Vehicles.Car
             if (transmission.Gear != requested)
                 transmission.TrySelect(requested, SpeedKph / 3.6f, command.Brake > 0.1f || SpeedKph < 0.72f);
             transmission.SetHandbrake(command.Handbrake);
+            if(manualClutchMode)
+                engine.Step(transmission.Gear,command.Clutch,command.Throttle,SpeedKph/3.6f);
 
             float steering = CarDriveMath.SteeringAngle(command.Steering, SpeedKph,
                 maxSteerAngle, highSpeedSteeringFraction, steeringReductionSpeedKph);
@@ -97,8 +106,11 @@ namespace NepalTrial.Vehicles.Car
 
             // Never propel in the old direction while a requested gear change is blocked.
             float signedThrottle = transmission.Gear == requested ? transmission.SignedThrottle(command.Throttle) : 0f;
-            float requestedTorque = CarDriveMath.DriveTorque(signedThrottle, SpeedKph,
-                topSpeedKph, command.Brake, transmission.HandbrakeOn) * motorTorque;
+            float requestedTorque = (!manualClutchMode ||
+                (engine.Running && command.Clutch<.65f))
+                ? CarDriveMath.DriveTorque(signedThrottle, SpeedKph,
+                    topSpeedKph, command.Brake, transmission.HandbrakeOn) * motorTorque
+                : 0f;
             rearLeft.motorTorque = requestedTorque * 0.5f;
             rearRight.motorTorque = requestedTorque * 0.5f;
 
