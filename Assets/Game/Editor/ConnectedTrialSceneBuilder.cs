@@ -226,6 +226,12 @@ namespace NepalTrial.EditorTools
                             serialized.FindProperty("maxRollbackMeters").floatValue=.1524f;
                             serialized.ApplyModifiedPropertiesWithoutUndo();
                         }
+                        if (behaviour is CarSpeedBreakerSensor ||
+                            behaviour is TwoWheelerBumpySensor)
+                        {
+                            serialized.FindProperty("enforceTrainingSpeedLimit").boolValue=false;
+                            serialized.ApplyModifiedPropertiesWithoutUndo();
+                        }
                         var field=serialized.GetIterator();
                         bool changed=false;
                         if(field.NextVisible(true))
