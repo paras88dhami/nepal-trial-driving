@@ -16,6 +16,7 @@ namespace NepalTrial.Trial
         private bool outside;
         private bool exitRequested;
         private float lastHeading;
+        public bool IsRunning => running;
 
         private void OnEnable() { if (trial != null) trial.AttemptRestarted += ResetAttempt; }
         private void OnDisable() { if (trial != null) trial.AttemptRestarted -= ResetAttempt; }
