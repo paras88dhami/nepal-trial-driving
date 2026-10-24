@@ -127,6 +127,21 @@ namespace NepalTrial.EditorTools
                     {
                         if(behaviour==null) continue;
                         var serialized=new SerializedObject(behaviour);
+                        if (behaviour is CarGarageParkingSensor)
+                        {
+                            serialized.FindProperty("requireReverseApproach").boolValue=true;
+                            serialized.ApplyModifiedPropertiesWithoutUndo();
+                        }
+                        if (behaviour is CarHillStartSensor)
+                        {
+                            serialized.FindProperty("maxRollbackMeters").floatValue=.1524f;
+                            serialized.ApplyModifiedPropertiesWithoutUndo();
+                        }
+                        if (behaviour is TwoWheelerRampSensor)
+                        {
+                            serialized.FindProperty("maxRollbackMeters").floatValue=.1524f;
+                            serialized.ApplyModifiedPropertiesWithoutUndo();
+                        }
                         var field=serialized.GetIterator();
                         bool changed=false;
                         if(field.NextVisible(true))
