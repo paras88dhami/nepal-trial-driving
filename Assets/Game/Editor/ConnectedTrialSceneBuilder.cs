@@ -175,6 +175,7 @@ namespace NepalTrial.EditorTools
                     }
                 }
 
+                if(stage==0) RebuildOfficialEight(stageRoot.transform,twoWheeler);
                 stageRoot.transform.position=new Vector3(0,0,stage*Spacing);
                 PlaceStageSign(stageRoot.transform,stages[stage],stage);
             }
@@ -195,6 +196,95 @@ namespace NepalTrial.EditorTools
                 throw new IOException("Unity failed to save "+output);
             Debug.Log("Generated "+output+" with one vehicle and seven ordered trial stages. "+
                 "Road links and trigger placement MUST be checked in PlayMode.");
+        }
+
+        private static void RebuildOfficialEight(Transform stageRoot,bool bike)
+        {
+            // Bagmati published track measurements:
+            // Category B: outer diameter 12 m, inner diameter 6 m, center spacing 9 m.
+            // A/K: outer radius 3.5 m, inner radius 1.5 m, center spacing 4.5 m.
+            // Drawings are top-down reference geometry, not finished road mesh.
+            float halfCenter=bike?2.25f:4.5f;
+            float inner=bike?1.5f:3f;
+            float outer=bike?3.5f:6f;
+            float middle=(inner+outer)*.5f;
+            float halfWidth=(outer-inner)*.5f;
+            foreach(Transform child in stageRoot.GetComponentsInChildren<Transform>(true))
+            {
+                if(child==stageRoot)continue;
+                string n=child.name;
+                bool remove=bike ? n=="Mark" || n.StartsWith("Gate_") :
+                    n.StartsWith("Left outer_") || n.StartsWith("Left inner_") ||
+                    n.StartsWith("Right outer_") || n.StartsWith("Right inner_") ||
+                    n.StartsWith("LeftGate_") || n.StartsWith("RightGate_");
+                if(remove)UnityEngine.Object.DestroyImmediate(child.gameObject);
+            }
+            Material line=CreateMaterial("ConnectedFigureEightLines",new Color(.96f,.80f,.10f));
+            for(int side=-1;side<=1;side+=2)
+            for(int ring=0;ring<2;ring++)
+            {
+                float radius=ring==0?inner:outer;
+                for(int k=0;k<64;k++)
+                {
+                    float a=2f*Mathf.PI*k/64f;
+                    float b=2f*Mathf.PI*(k+1)/64f;
+                    Vector3 p=new Vector3(side*halfCenter+radius*Mathf.Cos(a),.105f,
+                        radius*Mathf.Sin(a));
+                    Vector3 q=new Vector3(side*halfCenter+radius*Mathf.Cos(b),.105f,
+                        radius*Mathf.Sin(b));
+                    GameObject stripe=GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    stripe.name="OfficialFigureEight_Line";
+                    stripe.transform.position=(p+q)*.5f;
+                    stripe.transform.rotation=Quaternion.LookRotation(q-p);
+                    stripe.transform.localScale=new Vector3(.15f,.04f,Vector3.Distance(p,q));
+                    stripe.GetComponent<BoxCollider>().enabled=false;
+                    stripe.GetComponent<Renderer>().sharedMaterial=line;
+                    stripe.transform.SetParent(stageRoot,true);
+                }
+            }
+
+            var gateTransforms=new List<Transform>();
+            for(int loop=0;loop<2;loop++)
+            for(int i=0;i<5;i++)
+            {
+                float a=loop==0
+                    ? Mathf.PI/4f+i*Mathf.PI/2f
+                    : 3f*Mathf.PI/4f-i*Mathf.PI/2f;
+                float centerX=loop==0?-halfCenter:halfCenter;
+                Vector3 point=new Vector3(centerX+middle*Mathf.Cos(a),.10f,middle*Mathf.Sin(a));
+                Vector3 forward=loop==0
+                    ? new Vector3(-Mathf.Sin(a),0,Mathf.Cos(a))
+                    : new Vector3(Mathf.Sin(a),0,-Mathf.Cos(a));
+                GameObject marker=new GameObject("OfficialCheckpoint_"+loop+"_"+i);
+                marker.transform.SetParent(stageRoot,false);
+                marker.transform.position=point;
+                marker.transform.rotation=Quaternion.LookRotation(forward);
+                gateTransforms.Add(marker.transform);
+                GameObject band=GameObject.CreatePrimitive(PrimitiveType.Cube);
+                band.name="CheckpointMarker";
+                band.transform.SetParent(marker.transform,false);
+                band.transform.localPosition=Vector3.zero;
+                band.transform.localScale=new Vector3(halfWidth*1.85f,.03f,.14f);
+                band.GetComponent<BoxCollider>().enabled=false;
+                band.GetComponent<Renderer>().sharedMaterial=CreateMaterial(
+                    "ConnectedGateGreen",new Color(.10f,.78f,.32f));
+            }
+
+            MonoBehaviour sensor=bike
+                ? (MonoBehaviour)stageRoot.GetComponentInChildren<TwoWheelerFigureEightSensor>()
+                : stageRoot.GetComponentInChildren<CarFigureEightSensor>();
+            if(sensor==null)throw new InvalidOperationException("Missing Figure-8 sensor in base course.");
+            var serialized=new SerializedObject(sensor);
+            serialized.FindProperty("leftCenter").vector2Value=new Vector2(-halfCenter,0f);
+            serialized.FindProperty("rightCenter").vector2Value=new Vector2(halfCenter,0f);
+            serialized.FindProperty(bike?"radius":"ringRadius").floatValue=middle;
+            serialized.FindProperty(bike?"halfWidth":"trackHalfWidth").floatValue=halfWidth;
+            serialized.FindProperty("gateHalfWidth").floatValue=halfWidth;
+            var gates=serialized.FindProperty(bike?"checkpoints":"orderedGates");
+            gates.arraySize=gateTransforms.Count;
+            for(int i=0;i<gateTransforms.Count;i++)
+                gates.GetArrayElementAtIndex(i).objectReferenceValue=gateTransforms[i];
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void SetOverallRuntime(TrialGameplayRuntime trial,string vehicle,string[] stages)
