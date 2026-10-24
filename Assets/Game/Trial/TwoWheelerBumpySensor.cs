@@ -12,6 +12,7 @@ namespace NepalTrial.Trial
         [SerializeField] private TwoWheelerRigidbodyController vehicle;
         [SerializeField] private string stageId = "speed-breaker";
         [SerializeField, Min(.1f)] private float maxSafeSpeedKph = 12f;
+        [SerializeField] private bool enforceTrainingSpeedLimit = true;
         private SpeedBreakerValidator validator;
         private readonly HashSet<Collider> overlaps=new HashSet<Collider>();
         private bool footBefore;
@@ -32,7 +33,8 @@ namespace NepalTrial.Trial
                 trial.IsPaused || trial.CurrentStage != stageId || crossed ||
                 other.GetComponentInParent<TwoWheelerRigidbodyController>() != vehicle ||
                 !overlaps.Add(other) || overlaps.Count != 1) return;
-            CourseEvent evt=validator.Sample(true,vehicle.SpeedKph);
+            CourseEvent evt=validator.Sample(true,
+                enforceTrainingSpeedLimit ? vehicle.SpeedKph : 0f);
             if (evt.Kind==CourseEventKind.Violation) trial.ReportViolation(evt.Code);
         }
         private void FixedUpdate()
