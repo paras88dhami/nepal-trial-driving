@@ -1,3 +1,4 @@
+using NepalTrial.Input;
 using UnityEngine;
 using UnityEngine.UI;
 #if ENABLE_INPUT_SYSTEM
@@ -44,6 +45,13 @@ namespace NepalTrial.Vehicles.Car
             if(canvas==null)return;
             AddButton(canvas.transform,"Signal Left [Z]",new Vector2(25,-335),ToggleLeft);
             AddButton(canvas.transform,"Signal Right [X]",new Vector2(215,-335),ToggleRight);
+            var car=GetComponent<CarDriveController>();
+            var input=GetComponent<PrototypeCarInput>();
+            if(car!=null && car.ManualClutchMode && input!=null)
+            {
+                AddButton(canvas.transform,"Clutch [Shift]",new Vector2(25,-405),input.ToggleClutch);
+                AddButton(canvas.transform,"Ignition [I]",new Vector2(215,-405),car.StartEngine);
+            }
         }
 
         private static void AddButton(Transform canvas,string title,Vector2 position,
