@@ -23,6 +23,7 @@ namespace NepalTrial.Trial
         [SerializeField] private float radius = 7f;
         [SerializeField] private float roadHalfWidth = 2.1f;
         private readonly TrialBoundaryState boundaryState = new TrialBoundaryState();
+        private readonly BoundaryIncidentCounter incidentCounter = new BoundaryIncidentCounter();
         private int nextCheckpoint;
         private bool complete;
 
@@ -38,12 +39,14 @@ namespace NepalTrial.Trial
         }
 
         public int BoundaryContacts => boundaryState.ViolationCount;
+        public int BoundaryIncidents => incidentCounter.IncidentCount;
         public int CheckpointsReached => nextCheckpoint;
         public bool Complete => complete;
 
         private void FixedUpdate()
         {
             if (wheels == null || car == null || complete) return;
+            bool anyWheelOutside = false;
             for (int i = 0; i < wheels.Length; i++)
             {
                 var wheel = wheels[i];
@@ -60,6 +63,7 @@ namespace NepalTrial.Trial
                 string wheelId = i.ToString();
                 if (!onLeft && !onRight)
                 {
+                    anyWheelOutside = true;
                     boundaryState.Enter(wheelId, "outside-provisional-track");
                 }
                 else
@@ -67,6 +71,8 @@ namespace NepalTrial.Trial
                     boundaryState.Exit(wheelId, "outside-provisional-track");
                 }
             }
+
+            incidentCounter.Update(anyWheelOutside);
 
             if (checkpoints != null && nextCheckpoint < checkpoints.Length)
             {
@@ -87,6 +93,7 @@ namespace NepalTrial.Trial
         public void ResetAttempt()
         {
             boundaryState.Reset();
+            incidentCounter.Reset();
             nextCheckpoint = 0;
             complete = false;
             RefreshHud();
@@ -94,7 +101,7 @@ namespace NepalTrial.Trial
 
         private void RefreshHud()
         {
-            if (violationsLabel != null) violationsLabel.text = "Line warnings: " + BoundaryContacts;
+            if (violationsLabel != null) violationsLabel.text = "Line incidents: " + BoundaryIncidents;
             if (progressLabel != null) progressLabel.text = "Checkpoints: " + nextCheckpoint +
                 "/" + (checkpoints != null ? checkpoints.Length : 0);
             if (statusLabel != null)
