@@ -211,7 +211,7 @@ namespace NepalTrial.EditorTools
             float halfWidth=(outer-inner)*.5f;
             foreach(Transform child in stageRoot.GetComponentsInChildren<Transform>(true))
             {
-                if(child==stageRoot)continue;
+                if(child==null || child==stageRoot)continue;
                 string n=child.name;
                 bool remove=bike ? n=="Mark" || n.StartsWith("Gate_") :
                     n.StartsWith("Left outer_") || n.StartsWith("Left inner_") ||
