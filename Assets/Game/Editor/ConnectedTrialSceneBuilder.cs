@@ -282,6 +282,8 @@ namespace NepalTrial.EditorTools
                     RebuildBikeRamp(stageRoot.transform);
                 if(twoWheeler && stages[stage]=="narrow-plank")
                     RebuildBikePlank(stageRoot.transform);
+                if(stages[stage]=="speed-breaker")
+                    RebuildBumps(stageRoot.transform,twoWheeler);
                 stageRoot.transform.position=new Vector3(0,0,stage*Spacing);
                 PlaceStageSign(stageRoot.transform,stages[stage],stage);
             }
@@ -302,6 +304,39 @@ namespace NepalTrial.EditorTools
                 throw new IOException("Unity failed to save "+output);
             Debug.Log("Generated "+output+" with one vehicle and seven ordered trial stages. "+
                 "Road links and trigger placement MUST be checked in PlayMode.");
+        }
+
+        private static void RebuildBumps(Transform stageRoot,bool twoWheeler)
+        {
+            // Published training-ground dimensions: bike bumpy lane 5m x 2m,
+            // car speed-breaker lane 16m long. The number/height of bumps
+            // must still be checked against the local trial facility.
+            foreach(Transform t in stageRoot.GetComponentsInChildren<Transform>(true))
+            {
+                if(t==null || t==stageRoot)continue;
+                if(t.name=="PhysicalBump" || t.name.StartsWith("Bump_"))
+                    UnityEngine.Object.DestroyImmediate(t.gameObject);
+            }
+            float laneWidth=twoWheeler?2f:3f;
+            int n=6;
+            float step=twoWheeler?1f:2f;
+            float initial=twoWheeler?-2.5f:-5f;
+            Material paint=CreateMaterial("ConnectedFigureEightLines",
+                new Color(.96f,.8f,.10f));
+            for(int i=0;i<n;i++)
+            {
+                GameObject bump=GameObject.CreatePrimitive(PrimitiveType.Cube);
+                bump.name="OfficialStyleBump_"+(i+1);
+                bump.transform.SetParent(stageRoot,false);
+                bump.transform.position=new Vector3(0,.085f,initial+i*step);
+                bump.transform.localScale=new Vector3(laneWidth,.14f,.25f);
+                bump.GetComponent<Renderer>().sharedMaterial=paint;
+            }
+            Transform zone=stageRoot.Find(twoWheeler?"BumpyZone":"SpeedBreakerTrigger");
+            if(zone==null)throw new InvalidOperationException("Missing speed breaker course sensor.");
+            zone.position=new Vector3(0,1.2f,twoWheeler?0f:8f);
+            var box=zone.GetComponent<BoxCollider>();
+            box.size=new Vector3(laneWidth+1f,3f,twoWheeler?6.6f:1.5f);
         }
 
         private static void RebuildBikeRamp(Transform stageRoot)
