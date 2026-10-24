@@ -12,6 +12,7 @@ namespace NepalTrial.Trial
         [SerializeField] private CarDriveController car;
         [SerializeField] private string stageId = "speed-breaker";
         [SerializeField, Min(0.1f)] private float maxCrossingSpeedKph = 12f;
+        [SerializeField] private bool enforceTrainingSpeedLimit = true;
         private SpeedBreakerValidator validator;
         private readonly HashSet<Collider> overlaps = new HashSet<Collider>();
 
@@ -24,7 +25,8 @@ namespace NepalTrial.Trial
         {
             if (trial == null || trial.IsPaused || trial.State != ExamStage.Running || trial.CurrentStage != stageId || car == null || other.GetComponentInParent<CarDriveController>() != car
                 || !overlaps.Add(other) || overlaps.Count != 1) return;
-            CourseEvent result = validator.Sample(true, car.SpeedKph);
+            CourseEvent result = validator.Sample(true,
+                enforceTrainingSpeedLimit ? car.SpeedKph : 0f);
             if (result.Kind == CourseEventKind.Violation) trial.ReportViolation(result.Code);
             if (result.Kind == CourseEventKind.Completed) trial.ReportStage(stageId);
         }
