@@ -15,6 +15,7 @@ namespace NepalTrial.Trial
         private bool started;
         private bool stopped;
         private bool finished;
+        private bool descendingReached;
 
         public bool HasCompletedStop => stopped;
 
@@ -35,17 +36,24 @@ namespace NepalTrial.Trial
             started=true;
             stopped=false;
             finished=false;
+            descendingReached=false;
         }
 
         public CourseEvent Sample(float signedUphillPosition, bool inStopZone,
-            float speedMetersPerSecond, bool footDown, bool crossedExit, float deltaSeconds)
+            float speedMetersPerSecond, bool footDown, bool crossedExit, float deltaSeconds,
+            bool descending=false)
         {
             if (!started || finished) return new CourseEvent();
             if (deltaSeconds < 0f) throw new ArgumentOutOfRangeException(nameof(deltaSeconds));
             elapsed+=deltaSeconds;
-            highest=Mathf.Max(highest,signedUphillPosition);
-            if (highest-signedUphillPosition > maxRollback)
-                return Finish(CourseEventKind.Violation,"ramp-rollback");
+            // Rollback applies during ascent; intended descent is not mistaken for rolling backward.
+            descendingReached |= descending;
+            if (!descendingReached)
+            {
+                highest=Mathf.Max(highest,signedUphillPosition);
+                if (highest-signedUphillPosition > maxRollback)
+                    return Finish(CourseEventKind.Violation,"ramp-rollback");
+            }
             if (elapsed > timeoutSeconds)
                 return Finish(CourseEventKind.Violation,"ramp-timeout");
             if (footDown) return Finish(CourseEventKind.Violation,"ramp-foot-down");
