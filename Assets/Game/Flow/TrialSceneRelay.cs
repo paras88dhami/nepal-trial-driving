@@ -1,5 +1,7 @@
 using NepalTrial.Trial;
 using NepalTrial.Settings;
+using NepalTrial.Vehicles.Car;
+using NepalTrial.Vehicles.TwoWheeler;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -19,6 +21,7 @@ namespace NepalTrial.Flow
         private string error;
         private bool vibrationEnabled;
         private float lastVibrationTime = -10f;
+        private bool attemptedCheckpointRestore;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Install()
@@ -43,6 +46,7 @@ namespace NepalTrial.Flow
             trial.Finished += OnFinished;
             trial.ViolationReported += OnViolation;
             trial.AttemptRestarted += OnRestart;
+            trial.StageCompleted += OnStageCompleted;
         }
 
         private void Start() => BuildControls();
@@ -53,6 +57,7 @@ namespace NepalTrial.Flow
             trial.Finished -= OnFinished;
             trial.ViolationReported -= OnViolation;
             trial.AttemptRestarted -= OnRestart;
+            trial.StageCompleted -= OnStageCompleted;
         }
 
         private void OnFinished(ExamStage state)
@@ -62,6 +67,41 @@ namespace NepalTrial.Flow
             TrialSessionService.ReportStageResult(state==ExamStage.Passed,trial.Score);
             active = TrialSessionService.Current;
             UpdateStatus();
+        }
+
+        private void OnStageCompleted(string stage)
+        {
+            if(active==null || !active.connectedExam ||
+                !TrialSessionService.IsSessionScene(SceneManager.GetActiveScene().name))return;
+            TrialSessionService.RecordConnectedCheckpoint(stage,trial.Score,
+                trial.ViolationCount,trial.RemainingSeconds);
+            active=TrialSessionService.Current;
+        }
+
+        private void RestoreAtCheckpoint()
+        {
+            if(attemptedCheckpointRestore || active==null || !active.connectedExam ||
+                active.stageIndex<=0 || active.ended || trial==null ||
+                trial.State!=ExamStage.Running)return;
+            attemptedCheckpointRestore=true;
+            if(!trial.RestoreCheckpoint(active.stageIndex,
+                100-active.completedPenaltyPoints,
+                active.checkpointViolations,active.checkpointSeconds))return;
+
+            Vector3 p=new Vector3(0,1.15f,active.stageIndex*70f-18f);
+            var car=FindFirstObjectByType<CarDriveController>();
+            var bike=FindFirstObjectByType<TwoWheelerRigidbodyController>();
+            Rigidbody rb=car!=null?car.GetComponent<Rigidbody>() :
+                bike!=null?bike.GetComponent<Rigidbody>():null;
+            if(rb!=null)
+            {
+                rb.position=p;
+                rb.rotation=Quaternion.identity;
+                rb.linearVelocity=Vector3.zero;
+                rb.angularVelocity=Vector3.zero;
+            }
+            Debug.Log("Connected exam resumed from stage "+(active.stageIndex+1)+
+                " with score "+trial.Score+". Current stage restarts.");
         }
 
         private void OnViolation(string code)
@@ -80,15 +120,18 @@ namespace NepalTrial.Flow
             if (TrialSessionService.IsSessionScene(SceneManager.GetActiveScene().name))
                 TrialSessionService.RetryStage();
             active = TrialSessionService.Current;
+            attemptedCheckpointRestore=true;
             error=null;
             UpdateStatus();
         }
 
         private void Update()
         {
+            RestoreAtCheckpoint();
             if (nextButton != null)
             {
-                bool available = active != null && active.mode == DriveMode.Exam && active.AwaitingNext;
+                bool available = active != null && !active.connectedExam &&
+                    active.mode == DriveMode.Exam && active.AwaitingNext;
                 if (nextButton.gameObject.activeSelf != available)
                     nextButton.gameObject.SetActive(available);
             }
@@ -116,7 +159,12 @@ namespace NepalTrial.Flow
                 return;
             }
             statusLabel.text=active.mode+" | "+
-                (active.stageIndex+1)+"/"+active.courses.Length+" | "+
+                (active.connectedExam ? "One connected ground | " : "")+
+                (active.connectedExam && trial!=null
+                    ? Mathf.Min(trial.CurrentStage==""?active.courses.Length:
+                        System.Array.IndexOf(active.courses,trial.CurrentStage)+1,
+                        active.courses.Length)
+                    : active.stageIndex+1)+"/"+active.courses.Length+" | "+
                 (active.AwaitingNext?"Stage passed - tap Next":"Drive the course");
         }
 
