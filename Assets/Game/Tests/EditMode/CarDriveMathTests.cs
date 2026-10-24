@@ -24,6 +24,15 @@ namespace NepalTrial.Tests.EditMode
         }
 
         [Test]
+        public void ParkHoldsAllWheelsWhileHandbrakeOnlyHoldsRear()
+        {
+            Assert.AreEqual(3500f, CarDriveMath.WheelBrakeTorque(0f, 3500f, true, false, false));
+            Assert.AreEqual(3500f, CarDriveMath.WheelBrakeTorque(0f, 3500f, true, false, true));
+            Assert.AreEqual(0f, CarDriveMath.WheelBrakeTorque(0f, 3500f, false, true, false));
+            Assert.AreEqual(3500f, CarDriveMath.WheelBrakeTorque(0f, 3500f, false, true, true));
+        }
+
+        [Test]
         public void BrakeTorqueIsClamped()
         {
             Assert.AreEqual(0f, CarDriveMath.BrakeTorque(-1f, 2400f));
