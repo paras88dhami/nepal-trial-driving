@@ -24,8 +24,10 @@ namespace NepalTrial.Input
         private void Refresh()
         {
             if (label == null || car == null) return;
-            bool waitingForReverse = input != null && input.ReverseSelected && car.CurrentGear != DriveGear.Reverse;
-            label.text = "Gear: " + car.CurrentGear + (waitingForReverse ? " (stop to reverse)" : "");
+            bool waitingForShift = input != null && input.SelectedGear != car.CurrentGear;
+            label.text = "Gear: " + car.CurrentGear +
+                (waitingForShift ? " (waiting for " + input.SelectedGear + ")" : "") +
+                (car.HandbrakeEngaged ? " | Handbrake ON" : "");
         }
     }
 }
