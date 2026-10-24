@@ -40,7 +40,7 @@ Updated 2026-10-24. Source of truth: Unity 6.6 URP project on `dev`.
 
 ## Phase statuses (2026-10-24)
 - Phase 1: IMPLEMENTATION IN PROGRESS — physical Drive/Reverse/Neutral/Park commands, Park brake on all wheels, hold/release handbrake, touchscreen and keyboard, vehicle reset, speed-adaptive steering, motor torque safety, gear indicator and NUnit cases on dev. Actual suspension tuning, physics validation and real asset wheel setup remain.
-- Phase 2: IMPLEMENTATION IN PROGRESS — live traffic-light, speed-breaker, rotated-box garage, U-turn, hill start and obstacle collision sensors added with garage geometry tests. Sensor references, actual track scenes, verified course geometry and scoring remain.
+- Phase 2: SCENE GENERATION IMPLEMENTED / UNITY VALIDATION PENDING — six independent practice car trials can be created through Unity's Nepal Trial > Phase 2 menu, with trial controller, car, checkpoints, scoring, pause/retry/results, reset-aware sensors, traffic light cycle, prototype geometry, and a static scene audit. See docs/19-PHASE-2-CAR-TRIAL-SCENES.md. Generated .unity and material assets still need creation/commit in Unity; code has NOT been compiled or played, and official track rules remain unverified.
 - Phase 3: PARTIAL FOUNDATIONS — two-wheeler experimental Rigidbody and pure validators are merged; full tire contact, course scene and tuning remain.
 - Phase 4: PARTIAL FOUNDATIONS — game flow, exam coordinator and PlayerPrefs stores merged; actual menu/scene wiring, vehicle spawning and complete persistence flows remain.
 - Phase 5: NOT RUN — Unity 6.6 Test Framework 1.8.0 dependency added to manifest; automated and physical Android tests still must run in Unity.
