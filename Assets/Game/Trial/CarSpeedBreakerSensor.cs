@@ -15,26 +15,35 @@ namespace NepalTrial.Trial
         [SerializeField] private bool enforceTrainingSpeedLimit = true;
         private SpeedBreakerValidator validator;
         private readonly HashSet<Collider> overlaps = new HashSet<Collider>();
+        private bool enteredExamZone;
 
         private void Awake() => validator = new SpeedBreakerValidator(Mathf.Max(0.1f, maxCrossingSpeedKph));
         private void Reset() => GetComponent<Collider>().isTrigger = true;
         private void OnEnable() { if (trial != null) trial.AttemptRestarted += Clear; }
-        private void Clear() { overlaps.Clear(); if (validator != null) validator.Reset(); }
+        private void Clear() { overlaps.Clear(); enteredExamZone=false; if (validator != null) validator.Reset(); }
 
         private void OnTriggerEnter(Collider other)
         {
             if (trial == null || trial.IsPaused || trial.State != ExamStage.Running || trial.CurrentStage != stageId || car == null || other.GetComponentInParent<CarDriveController>() != car
                 || !overlaps.Add(other) || overlaps.Count != 1) return;
+            if(!enforceTrainingSpeedLimit) enteredExamZone=true;
             CourseEvent result = validator.Sample(true,
                 enforceTrainingSpeedLimit ? car.SpeedKph : 0f);
             if (result.Kind == CourseEventKind.Violation) trial.ReportViolation(result.Code);
-            if (result.Kind == CourseEventKind.Completed) trial.ReportStage(stageId);
+            if (enforceTrainingSpeedLimit && result.Kind == CourseEventKind.Completed)
+                trial.ReportStage(stageId);
         }
 
         private void OnTriggerExit(Collider other)
         {
             if (!overlaps.Remove(other) || overlaps.Count != 0) return;
             validator.Sample(false, 0f);
+            if(!enforceTrainingSpeedLimit && enteredExamZone && trial!=null &&
+               trial.State==ExamStage.Running && trial.CurrentStage==stageId && !trial.IsPaused)
+            {
+                enteredExamZone=false;
+                trial.ReportStage(stageId);
+            }
         }
 
         private void OnDisable()
