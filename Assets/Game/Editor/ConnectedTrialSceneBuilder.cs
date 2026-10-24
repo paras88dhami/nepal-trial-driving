@@ -95,6 +95,58 @@ namespace NepalTrial.EditorTools
                     {
                         Debug.LogError(path+": behavioral assessment UI missing."); errors++;
                     }
+                    if(vehicle==TrialCatalog.StarterCar)
+                    {
+                        var garage=UnityEngine.Object.FindFirstObjectByType<CarGarageParkingSensor>();
+                        var lback=UnityEngine.Object.FindFirstObjectByType<CarLBackPathSensor>();
+                        var ramp=UnityEngine.Object.FindFirstObjectByType<CarHillStartSensor>();
+                        if(garage==null || lback==null || ramp==null ||
+                            car[0].GetComponent<CarTurnIndicators>()==null)
+                        {
+                            Debug.LogError(path+": missing car L-back, ramp or indicator component.");
+                            errors++;
+                        }
+                        else
+                        {
+                            var gs=new SerializedObject(garage);
+                            if(gs.FindProperty("pathSensor").objectReferenceValue!=lback)
+                            { Debug.LogError(path+": garage parking is not linked to L-back validator.");errors++; }
+                            var rs=new SerializedObject(ramp);
+                            if(rs.FindProperty("uphillStopZone").objectReferenceValue==null ||
+                               rs.FindProperty("downhillStopZone").objectReferenceValue==null)
+                            { Debug.LogError(path+": both car ramp stop zones must be configured.");errors++; }
+                        }
+                    }
+                    else
+                    {
+                        var plank=UnityEngine.Object.FindFirstObjectByType<TwoWheelerPlankSensor>();
+                        var uturn=UnityEngine.Object.FindFirstObjectByType<TwoWheelerUTurnSensor>();
+                        var ramp=UnityEngine.Object.FindFirstObjectByType<TwoWheelerRampSensor>();
+                        if(plank==null || uturn==null || ramp==null)
+                        {
+                            Debug.LogError(path+": missing plank, U-turn or ramp observer.");
+                            errors++;
+                        }
+                        else
+                        {
+                            var ps=new SerializedObject(plank);
+                            var front=bikes[0].transform.Find("FrontWheelCollider");
+                            var rear=bikes[0].transform.Find("RearWheelCollider");
+                            if(front==null || rear==null ||
+                               ps.FindProperty("frontWheel").objectReferenceValue!=
+                                   front.GetComponent<WheelCollider>() ||
+                               ps.FindProperty("rearWheel").objectReferenceValue!=
+                                   rear.GetComponent<WheelCollider>())
+                            {Debug.LogError(path+": plank wheels are not bound to shared vehicle.");errors++;}
+                            var us=new SerializedObject(uturn);
+                            if(!us.FindProperty("useHorseshoeBoundary").boolValue ||
+                               us.FindProperty("curveCenter").objectReferenceValue==null)
+                            {Debug.LogError(path+": curved two-wheeler U-turn not configured.");errors++;}
+                            var rs=new SerializedObject(ramp);
+                            if(rs.FindProperty("downhillStopZone").objectReferenceValue==null)
+                            {Debug.LogError(path+": downhill bike stop zone is missing.");errors++;}
+                        }
+                    }
                     foreach(MonoBehaviour script in UnityEngine.Object.FindObjectsByType<MonoBehaviour>(
                         FindObjectsSortMode.None))
                     {
