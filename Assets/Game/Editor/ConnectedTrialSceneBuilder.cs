@@ -133,16 +133,24 @@ namespace NepalTrial.EditorTools
                             do
                             {
                                 if(field.propertyType != SerializedPropertyType.ObjectReference) continue;
+                                // Stage roots are moved after the old per-stage car/trial
+                                // are deleted. Their serialized references can therefore
+                                // be missing; use the known field contracts, not the old type.
                                 var original=field.objectReferenceValue;
                                 UnityEngine.Object replacement=null;
-                                if (original is TrialGameplayRuntime) replacement=sharedTrial;
-                                else if (original is CarDriveController) replacement=sharedCar;
-                                else if (original is TwoWheelerRigidbodyController) replacement=sharedBike;
-                                else if (original is PrototypeCarInput) replacement=sharedCarInput;
-                                else if (original is TwoWheelerInput) replacement=sharedBikeInput;
-                                else if (field.name=="vehicleBody" && !twoWheeler &&
-                                         original is BoxCollider && sharedCar!=null)
-                                    replacement=sharedCar.GetComponent<BoxCollider>();
+                                switch (field.name)
+                                {
+                                    case "trial": replacement=sharedTrial; break;
+                                    case "car": replacement=sharedCar; break;
+                                    case "vehicle": replacement=sharedBike; break;
+                                    case "input":
+                                        replacement=twoWheeler ? (UnityEngine.Object)sharedBikeInput : sharedCarInput;
+                                        break;
+                                    case "vehicleBody":
+                                        if (!twoWheeler && sharedCar!=null)
+                                            replacement=sharedCar.GetComponent<BoxCollider>();
+                                        break;
+                                }
                                 if(replacement==null || replacement==original)continue;
                                 field.objectReferenceValue=replacement;
                                 changed=true;
