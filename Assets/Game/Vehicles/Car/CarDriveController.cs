@@ -83,7 +83,8 @@ namespace NepalTrial.Vehicles.Car
 
             // Reverse is requested by the existing mobile/keyboard input; the interlock
             // refuses a Drive/Reverse switch while moving.
-            DriveGear requested = command.Reverse ? DriveGear.Reverse : DriveGear.Drive;
+            DriveGear requested = command.HasRequestedGear ? command.RequestedGear :
+                (command.Reverse ? DriveGear.Reverse : DriveGear.Drive);
             if (transmission.Gear != requested)
                 transmission.TrySelect(requested, SpeedKph / 3.6f, command.Brake > 0.1f || SpeedKph < 0.72f);
             transmission.SetHandbrake(command.Handbrake);
