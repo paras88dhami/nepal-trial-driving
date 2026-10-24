@@ -100,6 +100,21 @@ namespace NepalTrial.Trial
             return true;
         }
 
+        /// <summary>Resume at the beginning of the next unplayed physical stage.</summary>
+        public void RestoreCheckpoint(int stageIndex,int score,int violations,float remainingSeconds)
+        {
+            if(stageIndex < 0 || stageIndex >= stages.Count)
+                throw new ArgumentOutOfRangeException(nameof(stageIndex));
+            if(remainingSeconds <= 0f)
+                throw new ArgumentOutOfRangeException(nameof(remainingSeconds));
+            exam.RestoreRunning(score,violations);
+            currentStage=stageIndex;
+            eventCounts.Clear();
+            clock.Reset(remainingSeconds);
+            clock.Start();
+            paused=false;
+        }
+
         public void Reset(float durationSeconds)
         {
             exam.Reset();
