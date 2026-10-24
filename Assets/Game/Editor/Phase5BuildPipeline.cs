@@ -50,9 +50,10 @@ namespace NepalTrial.EditorTools
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
                 throw new InvalidOperationException(
                     "Activate Android in Unity Build Profiles or launch batchmode with -buildTarget Android.");
-            string folder="Build/Android";
+            string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+            string folder = Path.Combine(projectRoot,"Build","Android");
             Directory.CreateDirectory(folder);
-            string output=Path.GetFullPath(Path.Combine(folder,"NepalDrivingTrial-dev.apk"));
+            string output = Path.Combine(folder,"NepalDrivingTrial-dev.apk");
             var options=new BuildPlayerOptions
             {
                 scenes=EditorBuildSettings.scenes.Where(x=>x.enabled).Select(x=>x.path).ToArray(),
