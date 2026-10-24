@@ -13,6 +13,8 @@ namespace NepalTrial.Input
         private bool left, right, gas, stop, handbrake, reverse;
         private bool mobileMode;
         private bool keyboardReverse;
+        public bool ReverseSelected => mobileMode ? reverse : keyboardReverse;
+        public bool HandbrakePressed => handbrake;
 
         public void SetMobileButton(int button, bool pressed)
         {
