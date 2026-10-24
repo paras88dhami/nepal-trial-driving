@@ -10,12 +10,15 @@ namespace NepalTrial.Trial
     {
         public enum Action { BeginUTurn, EndUTurn, BeginHill, EndHill }
         [SerializeField] private Action action;
+        [SerializeField] private TrialGameplayRuntime trial;
         [SerializeField] private CarDriveController car;
         [SerializeField] private CarUTurnSensor uTurn;
         [SerializeField] private CarHillStartSensor hill;
         private readonly HashSet<Collider> overlaps = new HashSet<Collider>();
 
         private void Reset() => GetComponent<Collider>().isTrigger = true;
+        private void OnEnable() { if (trial != null) trial.AttemptRestarted += Clear; }
+        private void Clear() => overlaps.Clear();
 
         private void OnTriggerEnter(Collider other)
         {
@@ -31,6 +34,10 @@ namespace NepalTrial.Trial
         }
 
         private void OnTriggerExit(Collider other) => overlaps.Remove(other);
-        private void OnDisable() => overlaps.Clear();
+        private void OnDisable()
+        {
+            if (trial != null) trial.AttemptRestarted -= Clear;
+            overlaps.Clear();
+        }
     }
 }
