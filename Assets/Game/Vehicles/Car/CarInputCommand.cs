@@ -8,6 +8,7 @@ namespace NepalTrial.Vehicles.Car
         public float Steering;
         public float Throttle;
         public float Brake;
+        public float Clutch;
         public bool Reverse;
         public bool Handbrake;
         public bool HasRequestedGear;
@@ -20,6 +21,7 @@ namespace NepalTrial.Vehicles.Car
                 Steering = Mathf.Clamp(Steering, -1f, 1f),
                 Throttle = Mathf.Clamp01(Throttle),
                 Brake = Mathf.Clamp01(Brake),
+                Clutch = Mathf.Clamp01(Clutch),
                 Reverse = Reverse,
                 Handbrake = Handbrake,
                 HasRequestedGear = HasRequestedGear,
