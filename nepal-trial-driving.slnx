@@ -2,6 +2,7 @@
   <Project Path="NepalTrial.Runtime.csproj" />
   <Project Path="NepalTrial.EditModeTests.csproj" />
   <Project Path="NepalTrial.Editor.csproj" />
+  <Project Path="NepalTrial.PlayModeTests.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
 </Solution>

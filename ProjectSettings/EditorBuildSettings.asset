@@ -6,6 +6,69 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/NepalTrialMainMenu.unity
+    guid: 4a20cfc63475a6748b4972e515285f79
+  - enabled: 1
+    path: Assets/Scenes/CarTrial_figure-eight.unity
+    guid: 0391569652ed7e04398377ce2ed6941e
+  - enabled: 1
+    path: Assets/Scenes/CarTrial_u-turn.unity
+    guid: a510b29944073a6469fa685b68f83778
+  - enabled: 1
+    path: Assets/Scenes/CarTrial_hill-start.unity
+    guid: ec8210a27fee5624aaccf47e8664b52f
+  - enabled: 1
+    path: Assets/Scenes/CarTrial_traffic-light.unity
+    guid: 156ab04d8dfc1364e890b20b93c51e0d
+  - enabled: 1
+    path: Assets/Scenes/CarTrial_speed-breaker.unity
+    guid: 8d2c7d2684de2504f8d63b97c07f4426
+  - enabled: 1
+    path: Assets/Scenes/CarTrial_garage.unity
+    guid: a816d552be882d843a1a2ea32f337ecb
+  - enabled: 1
+    path: Assets/Scenes/BikeTrial_motorcycle_figure-eight.unity
+    guid: 6bff19eb3712ffe4ca42e16f369d39b6
+  - enabled: 1
+    path: Assets/Scenes/BikeTrial_motorcycle_narrow-plank.unity
+    guid: 40bd1648409f54e45b276661178c7c05
+  - enabled: 1
+    path: Assets/Scenes/BikeTrial_motorcycle_u-turn.unity
+    guid: 9f12ea83d8010a248a0730bc5d279f7a
+  - enabled: 1
+    path: Assets/Scenes/BikeTrial_motorcycle_traffic-light.unity
+    guid: 61091aa685b83b240a3e853c4a83f0bc
+  - enabled: 1
+    path: Assets/Scenes/BikeTrial_motorcycle_speed-breaker.unity
+    guid: 286114f51c97a60458d1d6a845cd5740
+  - enabled: 1
+    path: Assets/Scenes/BikeTrial_motorcycle_ramp.unity
+    guid: 0d07e27091bf9e743862ef6eae96f39c
+  - enabled: 1
+    path: Assets/Scenes/BikeTrial_motorcycle_behavior.unity
+    guid: b3f897704b6ca8c47a4ee9252b1af46e
+  - enabled: 1
+    path: Assets/Scenes/BikeTrial_scooter_figure-eight.unity
+    guid: 59e580d94efcbfa4bb1bc297d97974b2
+  - enabled: 1
+    path: Assets/Scenes/BikeTrial_scooter_narrow-plank.unity
+    guid: ed4e4c103ca53fa41be9d44c1a1bc7e3
+  - enabled: 1
+    path: Assets/Scenes/BikeTrial_scooter_u-turn.unity
+    guid: e4ea9221464042e4aa0c604ba2ad4e55
+  - enabled: 1
+    path: Assets/Scenes/BikeTrial_scooter_traffic-light.unity
+    guid: 6ed680d72d651df45b823cc77ecbd3c4
+  - enabled: 1
+    path: Assets/Scenes/BikeTrial_scooter_speed-breaker.unity
+    guid: 9659aa8584bc35147a670716ddfd3e79
+  - enabled: 1
+    path: Assets/Scenes/BikeTrial_scooter_ramp.unity
+    guid: 125df9edc1f8e75429b112fa733602f3
+  - enabled: 1
+    path: Assets/Scenes/BikeTrial_scooter_behavior.unity
+    guid: b6cab8758e40e8b4e940d48863bc1b3e
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
