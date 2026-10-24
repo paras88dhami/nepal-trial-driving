@@ -42,17 +42,18 @@ The generator does not overwrite existing connected scenes.
    This imports existing `Assets/Scenes/CarTrial_*.unity` and
    `Assets/Scenes/BikeTrial_*.unity`, then registers the three new scenes
    in Unity Build Settings.
-5. Open `Assets/Scenes/NepalTrial_FullCar.unity` or the connected Motorcycle/Scooter
+5. Run **Nepal Trial → Connected Exam → Audit All Three Connected Grounds** to check shared vehicle/runtime links and stage count. A passing audit does not verify physics.
+6. Open `Assets/Scenes/NepalTrial_FullCar.unity` or the connected Motorcycle/Scooter
    scene to inspect the full top-down ground and Inspector references.
-6. Press Play, or start from `NepalTrialMainMenu.unity` and select
+7. Press Play, or start from `NepalTrialMainMenu.unity` and select
    **Start Driving → Car / Motorcycle / Scooter → Exam**.
-7. Test the entire course in sequence. Watch for:
+8. Test the entire course in sequence. Watch for:
    - missing references and Unity Console errors
    - Figure-8 reachability/gate directions and boundary sensors
    - stage entry/exit sequence and transfer distances/road continuity
    - controls / reverse shifts / L-back corrections
    - behavior checklist/score/pass/fail/Restart/Home buttons
-8. Run Unity EditMode and PlayMode tests. Commit `NepalTrial_Full*.unity`,
+9. Run Unity EditMode and PlayMode tests. Commit `NepalTrial_Full*.unity`,
    associated `.meta`, material and ProjectSettings changes once reviewed.
 
 ## Important gaps before calling this an authentic Nepal trial
