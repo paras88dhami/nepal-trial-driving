@@ -160,11 +160,7 @@ namespace NepalTrial.Flow
             }
             statusLabel.text=active.mode+" | "+
                 (active.connectedExam ? "One connected ground | " : "")+
-                (active.connectedExam && trial!=null
-                    ? Mathf.Min(trial.CurrentStage==""?active.courses.Length:
-                        System.Array.IndexOf(active.courses,trial.CurrentStage)+1,
-                        active.courses.Length)
-                    : active.stageIndex+1)+"/"+active.courses.Length+" | "+
+                (active.stageIndex+1)+"/"+active.courses.Length+" | "+
                 (active.AwaitingNext?"Stage passed - tap Next":"Drive the course");
         }
 
