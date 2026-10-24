@@ -19,6 +19,7 @@ namespace NepalTrial.Progress
         public int bestScore;
         public int attempts;
         public int completions;
+        public string lastRunId;
     }
 
     /// <summary>Platform-independent data updates; serialize using Unity JsonUtility or another store.</summary>
@@ -39,6 +40,22 @@ namespace NepalTrial.Progress
             if (passed) record.completions++;
             record.bestScore = Math.Max(record.bestScore, score);
             return record;
+        }
+
+        /// <summary>Ensures recovering a saved exam run does not count it twice.</summary>
+        public static bool RecordRunOnce(LocalProgressData progress, string courseId,
+            int score, bool passed, string runId)
+        {
+            if (progress == null) throw new ArgumentNullException(nameof(progress));
+            if (string.IsNullOrEmpty(runId)) throw new ArgumentException("Run ID is required.", nameof(runId));
+            if (progress.records != null)
+            {
+                var existing = progress.records.Find(x => x != null && x.courseId == courseId);
+                if (existing != null && existing.lastRunId == runId) return false;
+            }
+            var record = RecordAttempt(progress,courseId,score,passed);
+            record.lastRunId = runId;
+            return true;
         }
 
         public static bool UnlockVehicle(LocalProgressData progress, string vehicleId)
