@@ -118,6 +118,15 @@ namespace NepalTrial.EditorTools
             if (canvas.Find("Handbrake") == null)
                 CreateButton(canvas, "Handbrake", new Vector2(-800f,120f), new Vector2(190f,130f),
                     input, MobileCarTouchControl.Control.Handbrake, true);
+            if (canvas.Find("Park") == null)
+                CreateButton(canvas, "Park", new Vector2(-800f,320f), new Vector2(180f,100f),
+                    input, MobileCarTouchControl.Control.Park, true);
+            if (canvas.Find("Neutral") == null)
+                CreateButton(canvas, "Neutral", new Vector2(-590f,320f), new Vector2(180f,100f),
+                    input, MobileCarTouchControl.Control.Neutral, true);
+            if (canvas.Find("Drive") == null)
+                CreateButton(canvas, "Drive", new Vector2(-380f,320f), new Vector2(180f,100f),
+                    input, MobileCarTouchControl.Control.Drive, true);
             if (canvas.Find("Reset") == null)
                 CreateButton(canvas, "Reset", new Vector2(-170f,320f), new Vector2(160f,100f),
                     input, MobileCarTouchControl.Control.Reset, true);
