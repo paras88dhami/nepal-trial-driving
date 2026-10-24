@@ -95,6 +95,9 @@ namespace NepalTrial.EditorTools
             var fall=session.AddComponent<TwoWheelerFallReporter>();
             Ref(fall,"vehicle",vehicle);
             Ref(fall,"trial",trial);
+            var stalls=session.AddComponent<TwoWheelerStallReporter>();
+            Ref(stalls,"vehicle",vehicle);
+            Ref(stalls,"trial",trial);
 
             var cameraRoot=new GameObject("ChaseCamera");
             cameraRoot.tag="MainCamera";
@@ -140,7 +143,9 @@ namespace NepalTrial.EditorTools
                 {"breaker-speed",10},{"breaker-foot-down",5},
                 {"ramp-rollback",35},{"ramp-no-stop",35},{"ramp-timeout",35},
                 {"ramp-foot-down",35},{"foot-down",5},{"two-wheeler-fall",35},
-                {"behavior-incomplete",10}
+                {"behavior-incomplete",10},
+                {"figure-eight-stall",35},{"ramp-first-stall",0},{"ramp-repeat-stall",35},
+                {"breaker-first-stall",5},{"breaker-repeat-stall",35},{"engine-stall",10}
             };
             var rules=so.FindProperty("penaltyRules");
             rules.arraySize=penalties.Count;
@@ -239,6 +244,7 @@ namespace NepalTrial.EditorTools
             Touch(canvas,"Clutch",new Vector2(100,225),input,TwoWheelerInput.Control.Clutch);
             Touch(canvas,"Gear +",new Vector2(265,225),input,TwoWheelerInput.Control.ShiftUp);
             Touch(canvas,"Gear -",new Vector2(430,225),input,TwoWheelerInput.Control.ShiftDown);
+            Touch(canvas,"Ignition",new Vector2(595,225),input,TwoWheelerInput.Control.Ignition);
             Touch(canvas,"Signal L",new Vector2(100,335),input,TwoWheelerInput.Control.LeftIndicator);
             Touch(canvas,"Signal R",new Vector2(265,335),input,TwoWheelerInput.Control.RightIndicator);
             Text stage=Label(canvas,"Stage",new Vector2(0,-40),580,28);
