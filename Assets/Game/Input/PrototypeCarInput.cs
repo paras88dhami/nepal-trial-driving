@@ -11,7 +11,7 @@ namespace NepalTrial.Input
     public sealed class PrototypeCarInput : MonoBehaviour
     {
         [SerializeField] private CarDriveController car;
-        private bool left, right, gas, stop, handbrake, reverse;
+        private bool left, right, gas, stop, handbrake, reverse, clutch;
         private bool mobileMode;
         private float steeringSensitivity = 1f;
         private void Awake() => steeringSensitivity = new LocalSettingsStore().Load().steeringSensitivity;
@@ -51,7 +51,7 @@ namespace NepalTrial.Input
         {
             reverse = false;
             selectedGear = DriveGear.Drive;
-            left = right = gas = stop = handbrake = keyboardHandbrake = false;
+            left = right = gas = stop = handbrake = clutch = keyboardHandbrake = false;
             if (car != null) car.ResetVehicle();
         }
         public void SetSteering(float value) { left = value < -0.01f; right = value > 0.01f; mobileMode = true; }
@@ -59,18 +59,20 @@ namespace NepalTrial.Input
         public void SetBrake(float value) { stop = value > 0.01f; mobileMode = true; }
         public void SetHandbrake(bool value) { handbrake = value; mobileMode = true; }
         public void ToggleHandbrake() { handbrake = !handbrake; mobileMode = true; }
+        public void ToggleClutch() { clutch = !clutch; mobileMode = true; }
+        public void SetClutch(bool value) { clutch = value; mobileMode = true; }
 
         public void UseKeyboard()
         {
             mobileMode = false;
             selectedGear = DriveGear.Drive;
             keyboardHandbrake = false;
-            left = right = gas = stop = handbrake = reverse = false;
+            left = right = gas = stop = handbrake = reverse = clutch = false;
         }
 
         private void OnDisable()
         {
-            left = right = gas = stop = handbrake = reverse = keyboardHandbrake = false;
+            left = right = gas = stop = handbrake = reverse = clutch = keyboardHandbrake = false;
             selectedGear = DriveGear.Drive;
             if (car != null) car.SetCommand(default);
         }
@@ -82,6 +84,7 @@ namespace NepalTrial.Input
             float brake = stop ? 1f : 0f;
             bool park = handbrake;
             bool backward = reverse;
+            float clutchValue=clutch?1f:0f;
 #if ENABLE_INPUT_SYSTEM
             if (!mobileMode && Keyboard.current != null)
             {
@@ -100,13 +103,14 @@ namespace NepalTrial.Input
                     selectedGear = DriveGear.Drive;
                 if (k.tKey.wasPressedThisFrame) ResetCar();
                 backward = selectedGear == DriveGear.Reverse;
+                clutchValue=k.leftShiftKey.isPressed || k.rightShiftKey.isPressed ? 1f : 0f;
             }
 #endif
             if (car != null)
                 car.SetCommand(new CarInputCommand
                 {
                     Steering = Mathf.Clamp(steer * steeringSensitivity, -1f, 1f), Throttle = throttle, Brake = brake,
-                    Reverse = backward, Handbrake = park,
+                    Reverse = backward, Handbrake = park, Clutch=clutchValue,
                     HasRequestedGear = true, RequestedGear = selectedGear
                 });
         }
