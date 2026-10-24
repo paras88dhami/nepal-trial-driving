@@ -272,6 +272,8 @@ namespace NepalTrial.EditorTools
                     RebuildCarLBack(stageRoot.transform,sharedTrial,sharedCar);
                 if(!twoWheeler && stages[stage]=="hill-start")
                     RebuildCarRamp(stageRoot.transform);
+                if(twoWheeler && stages[stage]=="ramp")
+                    RebuildBikeRamp(stageRoot.transform);
                 stageRoot.transform.position=new Vector3(0,0,stage*Spacing);
                 PlaceStageSign(stageRoot.transform,stages[stage],stage);
             }
@@ -292,6 +294,26 @@ namespace NepalTrial.EditorTools
                 throw new IOException("Unity failed to save "+output);
             Debug.Log("Generated "+output+" with one vehicle and seven ordered trial stages. "+
                 "Road links and trigger placement MUST be checked in PlayMode.");
+        }
+
+        private static void RebuildBikeRamp(Transform stageRoot)
+        {
+            TwoWheelerRampSensor ramp=stageRoot.GetComponentInChildren<TwoWheelerRampSensor>(true);
+            if(ramp==null)throw new InvalidOperationException("Bike ramp sensor missing.");
+            GameObject zone=new GameObject("Ramp_BikeDownhillStopArea");
+            zone.transform.SetParent(stageRoot,false);
+            zone.transform.position=new Vector3(0,1.6f,16.8f);
+            var collider=zone.AddComponent<BoxCollider>();
+            collider.isTrigger=true;
+            collider.size=new Vector3(7f,4f,2.5f);
+            var serialized=new SerializedObject(ramp);
+            serialized.FindProperty("downhillStopZone").objectReferenceValue=collider;
+            serialized.FindProperty("maxRollbackMeters").floatValue=.1524f;
+            serialized.FindProperty("timeoutSeconds").floatValue=90f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            DrawStripe("Ramp_BikeDownhillStopStripe",new Vector3(0,.10f,16.8f),
+                new Vector3(7f,.04f,.15f),CreateMaterial(
+                    "ConnectedFigureEightLines",new Color(.96f,.8f,.10f)),stageRoot);
         }
 
         private static void RebuildCarRamp(Transform stageRoot)
