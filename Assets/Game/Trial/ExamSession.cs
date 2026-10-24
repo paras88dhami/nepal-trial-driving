@@ -28,6 +28,17 @@ namespace NepalTrial.Trial
             Score = StartingScore;
             ViolationCount = 0;
         }
+        /// <summary>Restore a saved checkpoint at the start of a later stage.</summary>
+        public void RestoreRunning(int score,int violations)
+        {
+            if(score < MinimumPassingScore || score > StartingScore || violations < 0)
+                throw new ArgumentOutOfRangeException(nameof(score));
+            Reset();
+            Score=score;
+            ViolationCount=violations;
+            Stage=ExamStage.Running;
+        }
+
         public bool Start()
         {
             if (Stage != ExamStage.Ready) return false;
