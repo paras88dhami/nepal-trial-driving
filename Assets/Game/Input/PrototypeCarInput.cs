@@ -1,4 +1,5 @@
 using NepalTrial.Vehicles.Car;
+using NepalTrial.Settings;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -12,6 +13,8 @@ namespace NepalTrial.Input
         [SerializeField] private CarDriveController car;
         private bool left, right, gas, stop, handbrake, reverse;
         private bool mobileMode;
+        private float steeringSensitivity = 1f;
+        private void Awake() => steeringSensitivity = new LocalSettingsStore().Load().steeringSensitivity;
         private bool keyboardHandbrake;
         private DriveGear selectedGear = DriveGear.Drive;
         public bool ReverseSelected => selectedGear == DriveGear.Reverse;
@@ -102,7 +105,7 @@ namespace NepalTrial.Input
             if (car != null)
                 car.SetCommand(new CarInputCommand
                 {
-                    Steering = steer, Throttle = throttle, Brake = brake,
+                    Steering = Mathf.Clamp(steer * steeringSensitivity, -1f, 1f), Throttle = throttle, Brake = brake,
                     Reverse = backward, Handbrake = park,
                     HasRequestedGear = true, RequestedGear = selectedGear
                 });
