@@ -87,6 +87,8 @@ namespace NepalTrial.Trial
                 rules.Add(new Rule("hill-no-stop",0,1));
                 rules.Add(new Rule("figure-eight-stall",0,1));
                 rules.Add(new Rule("hill-timeout",0,1));
+                rules.Add(new Rule("hill-first-stall",0));
+                rules.Add(new Rule("hill-repeat-stall",0,1));
                 rules.Add(new Rule("garage-obstruction",0,1));
                 rules.Add(new Rule("garage-forward-correction",10,2));
                 rules.Add(new Rule("garage-line-touch",0,1));
