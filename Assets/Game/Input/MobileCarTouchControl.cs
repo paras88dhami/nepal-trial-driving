@@ -7,7 +7,7 @@ namespace NepalTrial.Mobile
     /// <summary>Finger-aware press/release; multiple buttons can remain held simultaneously.</summary>
     public sealed class MobileCarTouchControl : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
     {
-        public enum Control { SteerLeft, SteerRight, Throttle, Brake, Handbrake }
+        public enum Control { SteerLeft, SteerRight, Throttle, Brake, Handbrake, Reverse }
         [SerializeField] private PrototypeCarInput target;
         [SerializeField] private Control control;
         private int pointerId = int.MinValue;
@@ -41,7 +41,14 @@ namespace NepalTrial.Mobile
 
         private void Apply(bool pressed)
         {
-            if (target != null) target.SetMobileButton((int)control, pressed);
+            if (target == null) return;
+            if (control == Control.Reverse)
+            {
+                // Gear button toggles on press, not on pointer release.
+                if (pressed) target.ToggleReverse();
+                return;
+            }
+            target.SetMobileButton((int)control, pressed);
         }
     }
 }
