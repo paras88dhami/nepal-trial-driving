@@ -10,7 +10,7 @@ namespace NepalTrial.Input
     public sealed class TwoWheelerInput : MonoBehaviour
     {
         public enum Control { Left, Right, Throttle, FrontBrake, RearBrake, Clutch, FootDown,
-            ShiftUp, ShiftDown, LeftIndicator, RightIndicator, Reset }
+            ShiftUp, ShiftDown, LeftIndicator, RightIndicator, Reset, Ignition }
 
         [SerializeField] private TwoWheelerRigidbodyController vehicle;
         private bool left, right, gas, frontBrake, rearBrake, clutch, footDown;
@@ -38,6 +38,7 @@ namespace NepalTrial.Input
                 case Control.LeftIndicator: if (pressed) { leftIndicator = !leftIndicator; rightIndicator = false; } break;
                 case Control.RightIndicator: if (pressed) { rightIndicator = !rightIndicator; leftIndicator = false; } break;
                 case Control.Reset: if (pressed) ResetVehicle(); break;
+                case Control.Ignition: if (pressed && vehicle!=null) vehicle.StartEngine(); break;
             }
             Push();
         }
@@ -91,6 +92,7 @@ namespace NepalTrial.Input
                 if (k.zKey.wasPressedThisFrame) { leftIndicator = !leftIndicator; rightIndicator = false; }
                 if (k.xKey.wasPressedThisFrame) { rightIndicator = !rightIndicator; leftIndicator = false; }
                 if (k.tKey.wasPressedThisFrame) ResetVehicle();
+                if (k.iKey.wasPressedThisFrame && vehicle!=null) vehicle.StartEngine();
             }
 #endif
             Push();
