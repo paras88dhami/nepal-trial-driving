@@ -63,6 +63,7 @@ namespace NepalTrial.EditorTools
             CreateButton(canvas.transform,"Brake",new Vector2(-380,120),new Vector2(160,130),input,MobileCarTouchControl.Control.Brake,true);
             CreateButton(canvas.transform,"Gas",new Vector2(-170,120),new Vector2(160,130),input,MobileCarTouchControl.Control.Throttle,true);
             AddMissingControlButtons(canvas.transform, input);
+            AddGearDisplay(canvas.transform, controller, input);
             // Ordered practice gates are placeholders, not government dimensions.
             var gates = new Transform[4];
             var gatePoints = new[]
@@ -103,6 +104,8 @@ namespace NepalTrial.EditorTools
             }
 
             AddMissingControlButtons(canvas.transform, input);
+            var controller = input.GetComponent<CarDriveController>();
+            if (controller != null) AddGearDisplay(canvas.transform, controller, input);
             EditorSceneManager.MarkSceneDirty(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
             Debug.Log("Car controls upgraded. Save the scene (Ctrl+S); test Reverse, Handbrake and Reset.");
         }
@@ -118,6 +121,14 @@ namespace NepalTrial.EditorTools
             if (canvas.Find("Reset") == null)
                 CreateButton(canvas, "Reset", new Vector2(-170f,320f), new Vector2(160f,100f),
                     input, MobileCarTouchControl.Control.Reset, true);
+        }
+
+        private static void AddGearDisplay(Transform canvas, CarDriveController controller, PrototypeCarInput input)
+        {
+            if (GameObject.Find("CarGearHud") != null) return;
+            var gearText = CreateHudLabel(canvas, "Gear: Drive", new Vector2(0f, -220f));
+            var gearHud = new GameObject("CarGearHud").AddComponent<CarControlsHud>();
+            gearHud.Configure(controller, input, gearText);
         }
 
         private static Text CreateHudLabel(Transform parent, string value, Vector2 offset)
